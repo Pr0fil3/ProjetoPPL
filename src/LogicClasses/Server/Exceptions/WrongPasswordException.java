@@ -1,4 +1,4 @@
-package LogicClasses.Exceptions;
+package LogicClasses.Server.Exceptions;
 
 /**
  * Created by Leandro on 30/05/2014.

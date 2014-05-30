@@ -16,12 +16,20 @@ public class User {
         this.privilegios = privilegios;
     }
 
+    public User(String nome, String password, boolean privilegios) {
+        this(0,nome,password,privilegios);
+    }
+
     public String getNome() {
         return nome;
     }
 
     public String getPassword() {
         return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public int getId() {

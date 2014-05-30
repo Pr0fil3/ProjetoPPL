@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Leandro on 29/05/2014.
+ * OfertaEmprego
  */
 public class OfertaEmprego {
     private int id;
@@ -26,7 +26,6 @@ public class OfertaEmprego {
     public int getId() {
         return id;
     }
-
     public String getTitulo() {
         return titulo;
     }
