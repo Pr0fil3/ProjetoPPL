@@ -15,7 +15,6 @@ import java.sql.SQLException;
  * Created by Leandro on 29/05/2014.
  */
 public interface IServerForRegister extends Remote {
-    public User login(User user) throws RemoteException, SQLException, NoSuchAlgorithmException, UserNotFoundException, WrongPasswordException;
     public OfertaRecursos novaOferta(OfertaRecursos ofertaRecursos) throws RemoteException;
     public OfertaRecursos novaOferta(OfertaEmprego ofertaEmprego) throws RemoteException;
 }

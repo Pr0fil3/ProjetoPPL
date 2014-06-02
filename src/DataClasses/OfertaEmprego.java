@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * OfertaEmprego
  */
-public class OfertaEmprego {
+public class OfertaEmprego extends Oferta {
     private int id;
     private String titulo;
     private String detalhesOferta;
@@ -14,18 +14,36 @@ public class OfertaEmprego {
     private String perfilCandidatos;
     private List<String> anexos;
 
-    public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios, String perfilCandidatos) {
+    public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
+                         String perfilCandidatos, List<String> anexos, ESTADO_OFERTA estadoOferta) {
+        super(estadoOferta);
         this.id = id;
         this.titulo = titulo;
         this.detalhesOferta = detalhesOferta;
         this.numeroCandidatosNecessarios = numeroCandidatosNecessarios;
         this.perfilCandidatos = perfilCandidatos;
-        this.anexos = new ArrayList<String>();
+        this.anexos = anexos;
+    }
+
+    public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
+                         String perfilCandidatos, ESTADO_OFERTA estadoOferta) {
+        this(id,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,new ArrayList<String>(), estadoOferta);
+    }
+
+    public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
+                         String perfilCandidatos) {
+        this(id,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,ESTADO_OFERTA.POR_APROVAR);
+    }
+
+    public OfertaEmprego(String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
+                         String perfilCandidatos) {
+        this(0,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,ESTADO_OFERTA.POR_APROVAR);
     }
 
     public int getId() {
         return id;
     }
+
     public String getTitulo() {
         return titulo;
     }
