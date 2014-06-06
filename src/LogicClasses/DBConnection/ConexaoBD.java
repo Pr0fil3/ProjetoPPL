@@ -3,13 +3,14 @@ package LogicClasses.DBConnection;
 import java.sql.*;
 
 /**
- * A instaciação desta classe cria uma ligação à base de dados
+ * A instaciação desta classe cria uma ligação à base de dados e repetiva statment
  */
 public class ConexaoBD {
     private static String DEFAULT_URL = "jdbc:mysql://localhost:3306/projeto_ppl";
     private static String DEFAULT_USER = "root";
 
     private Connection connection;
+    private Statement statement;
     private boolean aSerUsado;
 
     /**
@@ -21,6 +22,7 @@ public class ConexaoBD {
      */
     public ConexaoBD(String url, String user, String password) throws SQLException {
         this.connection = DriverManager.getConnection(url, user, password);
+        this.statement = connection.createStatement();
         this.aSerUsado = false;
     }
 
@@ -38,18 +40,19 @@ public class ConexaoBD {
      */
     @Override
     protected void finalize() throws Throwable {
-        if (connection != null) {
-            connection.close();
-        }
+        if (this.connection != null)
+            this.connection.close();
+        if (this.statement != null)
+            this.statement.close();
     }
 
-    public Connection getConnection() {
-        aSerUsado = true;
-        return connection;
+    public Statement getStatement() {
+        this.aSerUsado = true;
+        return statement;
     }
 
     /**
-     * É chamado quando esta conexão não é mais necessária, e poder ser utilizado por outro user.
+     * É chamado quando esta statment não é mais necessária, e pode ser utilizada por outro user.
      */
     public void libertar() {
         aSerUsado = false;

@@ -3,6 +3,7 @@ package LogicClasses.DBConnection;
 import DataClasses.OfertaEmprego;
 import DataClasses.OfertaRecursos;
 import DataClasses.User;
+import com.sun.corba.se.spi.monitoring.StatisticMonitoredAttribute;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -36,6 +37,8 @@ public class ManagerConexaoBD {
     private static String ANEXOS_COLUNA_EMPREGO_ID = "emprego_id";
     private static String ANEXOS_COLUNA_PATH = "anexos_path";
 
+    public static enum TABELA {USERS, OFERTAS_RECURSOS, OFERTAS_EMPREGO, TABELA_ANEXOS}
+
     private List<ConexaoBD> conexoes = new ArrayList<ConexaoBD>();
 
     public ManagerConexaoBD() throws SQLException {
@@ -48,7 +51,7 @@ public class ManagerConexaoBD {
             conexoes.add(new ConexaoBD(url, user, password));
     }
 
-    private synchronized ConexaoBD getConnection() throws SQLException {
+    private synchronized ConexaoBD getConexao() throws SQLException {
         while(true) {
             for (ConexaoBD conexao : conexoes) {
                 if (!conexao.isaSerUsado()) {
@@ -64,99 +67,86 @@ public class ManagerConexaoBD {
         }
     }
 
+    private ResultSet getFromDB(Statement statement, String tabela, String condicao, String variavel) throws SQLException {
+        return statement.executeQuery("select * from " + tabela + " where " + condicao + " = " + variavel);
+    }
+
+    private User userFromResultSet(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            User newUser = new User(
+                    resultSet.getInt(USERS_COLUNA_ID),
+                    resultSet.getString(USERS_COLUNA_NOME),
+                    resultSet.getString(USERS_COLUNA_PASSWORD),
+                    resultSet.getBoolean(USERS_COLUNA_PRIVILEGIO));
+            return newUser;
+        } else {
+            return null;
+        }
+    }
+
+    private OfertaRecursos recursosFromResultSet(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            OfertaRecursos newOfertaRecursos = new OfertaRecursos(
+                    resultSet.getInt(RECURSOS_COLUNA_ID),
+                    resultSet.getString(RECURSOS_COLUNA_NOME),
+                    resultSet.getString(RECURSOS_COLUNA_CONTACTO),
+                    OfertaRecursos.parseAreaAtuacao(resultSet.getString(RECURSOS_COLUNA_AREA_ATUACAO)));
+            return newOfertaRecursos;
+        } else {
+            return null;
+        }
+    }
+
     public User getUser(int id) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
+        ConexaoBD conexao = getConexao();
         try {
-            ResultSet resultSet = statement.executeQuery("select * from "
-                    + NOME_TABELA_USERS + " where " + USERS_COLUNA_ID + " = " + id);
-            if (resultSet.next()) {
-                User newUser = new User(
-                        resultSet.getInt(USERS_COLUNA_ID),
-                        resultSet.getString(USERS_COLUNA_NOME),
-                        resultSet.getString(USERS_COLUNA_PASSWORD),
-                        resultSet.getBoolean(USERS_COLUNA_PRIVILEGIO));
-                return newUser;
-            } else {
-                return null;
-            }
+            return userFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_USERS, USERS_COLUNA_ID, String.valueOf(id)));
         } finally {
-            conexaoBD.libertar();
-            statement.close();
+            conexao.libertar();
         }
     }
 
     public User getUser(String name) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
+        ConexaoBD conexao = getConexao();
         try {
-            ResultSet resultSet = statement.executeQuery("select * from "
-                    + NOME_TABELA_USERS + " where " + USERS_COLUNA_NOME + " = " + name);
-            if (resultSet.next()) {
-                return getUser(resultSet.getInt(USERS_COLUNA_ID));
-            } else {
-                return null;
-            }
+            return userFromResultSet(getFromDB(getConexao().getStatement(), NOME_TABELA_USERS, USERS_COLUNA_NOME, USERS_COLUNA_NOME));
         }finally {
-            conexaoBD.libertar();
-            statement.close();
+            conexao.libertar();
         }
-
     }
 
     public User createUser(User newUser) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
+        ConexaoBD conexao = getConexao();
         try {
-            statement.executeUpdate("insert into users values (null,"
+            conexao.getStatement().executeUpdate("insert into " + NOME_TABELA_USERS + " values (null,"
                     + newUser.getNome() + ","
                     + newUser.getPassword() + ","
                     + newUser.isPrivilegios());
             return getUser(newUser.getNome());
         }finally {
-            conexaoBD.libertar();
-            statement.close();
+            conexao.libertar();
         }
     }
 
     public OfertaRecursos getOfertaRecursos(int id) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
+        ConexaoBD conexao = getConexao();
         try {
-            ResultSet resultSet = statement.executeQuery("select * from "
-                    + NOME_TABELA_OFERTAS_RECURSOS + " where " + RECURSOS_COLUNA_ID + " = " + id);
-            if (resultSet.next()) {
-                OfertaRecursos newOfertaRecursos = new OfertaRecursos(
-                        resultSet.getInt(RECURSOS_COLUNA_ID),
-                        resultSet.getString(RECURSOS_COLUNA_NOME),
-                        resultSet.getString(RECURSOS_COLUNA_CONTACTO),
-                        OfertaRecursos.parseAreaAtuacao(resultSet.getString(RECURSOS_COLUNA_AREA_ATUACAO)));
-                return newOfertaRecursos;
-            } else {
-                return null;
-            }
+            return recursosFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_OFERTAS_RECURSOS, RECURSOS_COLUNA_ID, String.valueOf(id)));
         } finally {
-            conexaoBD.libertar();
-            statement.close();
+            conexao.libertar();
         }
     }
 
     public OfertaRecursos getOfertaRecursos(String nome) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
+        ConexaoBD conexao = getConexao();
         try {
-            ResultSet resultSet = statement.executeQuery("select * from "
-                    + NOME_TABELA_OFERTAS_RECURSOS + " where " + RECURSOS_COLUNA_NOME + " = " + nome);
-            if (resultSet.next()) {
-                return getOfertaRecursos(resultSet.getInt(RECURSOS_COLUNA_ID));
-            } else {
-                return null;
-            }
+            return recursosFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_OFERTAS_RECURSOS, RECURSOS_COLUNA_NOME,nome));
         } finally {
-            conexaoBD.libertar();
-            statement.close();
+            conexao.libertar();
         }
     }
+
+    // PAREI AQUIIIII !!!!!
 
     public OfertaRecursos newOfertaRecursos(OfertaRecursos ofertaRecursos) throws SQLException {
         ConexaoBD conexaoBD = getConnection();
