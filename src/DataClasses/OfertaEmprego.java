@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * OfertaEmprego
+ * Classe OfertaEmprego, extende Oferta
  */
 public class OfertaEmprego extends Oferta {
     private int id;
@@ -82,5 +82,9 @@ public class OfertaEmprego extends Oferta {
 
     public void setAnexos(List<String> anexos) {
         this.anexos = anexos;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }

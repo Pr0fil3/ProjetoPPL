@@ -40,10 +40,10 @@ public class ConexaoBD {
      */
     @Override
     protected void finalize() throws Throwable {
-        if (this.connection != null)
-            this.connection.close();
         if (this.statement != null)
             this.statement.close();
+        if (this.connection != null)
+            this.connection.close();
     }
 
     public Statement getStatement() {

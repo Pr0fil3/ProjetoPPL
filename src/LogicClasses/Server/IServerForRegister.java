@@ -2,14 +2,9 @@ package LogicClasses.Server;
 
 import DataClasses.OfertaEmprego;
 import DataClasses.OfertaRecursos;
-import DataClasses.User;
-import LogicClasses.Server.Exceptions.UserNotFoundException;
-import LogicClasses.Server.Exceptions.WrongPasswordException;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 
 /**
  * Created by Leandro on 29/05/2014.

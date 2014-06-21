@@ -1,7 +1,7 @@
 package DataClasses;
 
 /**
- * Created by -nikeiZprooo- on 31/05/2014.
+ * Classe abstracta Oferta contém o estado da oferta.
  */
 public abstract class Oferta {
     public static enum ESTADO_OFERTA {POR_APROVAR, APROVACAO_PROVISORIA, TERMINADO};

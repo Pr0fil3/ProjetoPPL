@@ -5,15 +5,13 @@ import DataClasses.OfertaRecursos;
 import DataClasses.User;
 import LogicClasses.DBConnection.ManagerConexaoBD;
 import LogicClasses.Server.Exceptions.NoPrivilegesException;
-import LogicClasses.Server.Exceptions.UserNotFoundException;
+import LogicClasses.DBConnection.Exceptions.UserNotFoundException;
 import LogicClasses.Server.Exceptions.WrongPasswordException;
 
-import javax.naming.NoPermissionException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 
 /**

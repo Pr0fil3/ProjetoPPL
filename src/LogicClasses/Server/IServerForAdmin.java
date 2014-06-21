@@ -2,7 +2,7 @@ package LogicClasses.Server;
 
 import DataClasses.User;
 import LogicClasses.Server.Exceptions.NoPrivilegesException;
-import LogicClasses.Server.Exceptions.UserNotFoundException;
+import LogicClasses.DBConnection.Exceptions.UserNotFoundException;
 import LogicClasses.Server.Exceptions.WrongPasswordException;
 
 import java.rmi.Remote;

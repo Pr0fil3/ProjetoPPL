@@ -3,14 +3,17 @@ package LogicClasses.DBConnection;
 import DataClasses.OfertaEmprego;
 import DataClasses.OfertaRecursos;
 import DataClasses.User;
-import com.sun.corba.se.spi.monitoring.StatisticMonitoredAttribute;
+import LogicClasses.DBConnection.Exceptions.KeyNotReturnedException;
+import LogicClasses.DBConnection.Exceptions.OfertaEmpregoNotFoundException;
+import LogicClasses.DBConnection.Exceptions.OfertaRecursosNotFoundException;
+import LogicClasses.DBConnection.Exceptions.UserNotFoundException;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Leandro on 29/05/2014.
+ * Classe
  */
 public class ManagerConexaoBD {
     private static String NOME_TABELA_USERS = "Users";
@@ -25,6 +28,7 @@ public class ManagerConexaoBD {
     private static String RECURSOS_COLUNA_CONTACTO = "recursos_contacto";
     private static String RECURSOS_COLUNA_AREA_ATUACAO = "recursos_area_atuacao";
     private static String RECURSOS_COLUNA_EMPREGO_ID = "emprego_id";
+    private static String RECURSOS_COLUNA_ESTADO_OFERTA = "recursos_estado_oferta";
 
     private static String NOME_TABELA_OFERTAS_EMPREGO = "ofertas_emprego";
     private static String EMPREGO_COLUNA_ID = "emprego_id";
@@ -32,12 +36,11 @@ public class ManagerConexaoBD {
     private static String EMPREGO_COLUNA_DETALHES = "emprego_detalhes";
     private static String EMPREGO_COLUNA_CANDIDATOS_NECESSARIOS = "emprego_candidatos_necessarios";
     private static String EMPREGO_COLUNA_PERFIL = "emprego_perfil";
+    private static String EMPREGO_COLUNA_ESTADO_OFERTA = "emprego_estado";
 
     private static String NOME_TABELA_ANEXOS = "anexos";
     private static String ANEXOS_COLUNA_EMPREGO_ID = "emprego_id";
     private static String ANEXOS_COLUNA_PATH = "anexos_path";
-
-    public static enum TABELA {USERS, OFERTAS_RECURSOS, OFERTAS_EMPREGO, TABELA_ANEXOS}
 
     private List<ConexaoBD> conexoes = new ArrayList<ConexaoBD>();
 
@@ -71,154 +74,162 @@ public class ManagerConexaoBD {
         return statement.executeQuery("select * from " + tabela + " where " + condicao + " = " + variavel);
     }
 
-    private User userFromResultSet(ResultSet resultSet) throws SQLException {
-        if (resultSet.next()) {
+    /////////////////////
+    // FROM RESULT SET //
+    /////////////////////
+
+    private List<User> usersFromResultSet(ResultSet resultSet) throws SQLException {
+        List users = new ArrayList<User>();
+        while (resultSet.next()) {
             User newUser = new User(
                     resultSet.getInt(USERS_COLUNA_ID),
                     resultSet.getString(USERS_COLUNA_NOME),
                     resultSet.getString(USERS_COLUNA_PASSWORD),
                     resultSet.getBoolean(USERS_COLUNA_PRIVILEGIO));
-            return newUser;
-        } else {
-            return null;
+            users.add(newUser);
         }
+        return users;
     }
 
-    private OfertaRecursos recursosFromResultSet(ResultSet resultSet) throws SQLException {
-        if (resultSet.next()) {
+    private List<OfertaRecursos> recursosFromResultSet(ResultSet resultSet) throws SQLException {
+        List recursos = new ArrayList<OfertaRecursos>();
+        while (resultSet.next()) {
             OfertaRecursos newOfertaRecursos = new OfertaRecursos(
                     resultSet.getInt(RECURSOS_COLUNA_ID),
                     resultSet.getString(RECURSOS_COLUNA_NOME),
                     resultSet.getString(RECURSOS_COLUNA_CONTACTO),
-                    OfertaRecursos.parseAreaAtuacao(resultSet.getString(RECURSOS_COLUNA_AREA_ATUACAO)));
-            return newOfertaRecursos;
-        } else {
-            return null;
+                    resultSet.getInt(RECURSOS_COLUNA_EMPREGO_ID),
+                    OfertaRecursos.parseAreaAtuacao(resultSet.getString(RECURSOS_COLUNA_AREA_ATUACAO)),
+                    OfertaRecursos.parseEstadoOferta(resultSet.getString(RECURSOS_COLUNA_ESTADO_OFERTA)));
+            recursos.add(newOfertaRecursos);
         }
+        return recursos;
     }
 
-    public User getUser(int id) throws SQLException {
-        ConexaoBD conexao = getConexao();
-        try {
-            return userFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_USERS, USERS_COLUNA_ID, String.valueOf(id)));
-        } finally {
-            conexao.libertar();
+    private List<OfertaEmprego> empregoFromResultSet(ResultSet resultSet) throws SQLException {
+        List emprego = new ArrayList<OfertaRecursos>();
+        while (resultSet.next()){
+            int id = resultSet.getInt(EMPREGO_COLUNA_ID);
+
+            // Ir buscar os anexos do emprego
+            ConexaoBD conexao = getConexao();
+            List<String> anexos = new ArrayList<String>();
+            try{
+                anexos = anexosFromResultSet(getFromDB(conexao.getStatement(),NOME_TABELA_ANEXOS, ANEXOS_COLUNA_EMPREGO_ID, String.valueOf(id)));
+            } finally {
+                conexao.libertar();
+            }
+
+            OfertaEmprego newOfertaEmprego = new OfertaEmprego(
+                    id,
+                    resultSet.getString(EMPREGO_COLUNA_TITULO),
+                    resultSet.getString(EMPREGO_COLUNA_DETALHES),
+                    resultSet.getInt(EMPREGO_COLUNA_CANDIDATOS_NECESSARIOS),
+                    resultSet.getString(EMPREGO_COLUNA_PERFIL),
+                    anexos,
+                    OfertaEmprego.parseEstadoOferta(resultSet.getString(EMPREGO_COLUNA_ESTADO_OFERTA)));
+            emprego.add(newOfertaEmprego);
         }
+        return emprego;
     }
 
-    public User getUser(String name) throws SQLException {
-        ConexaoBD conexao = getConexao();
-        try {
-            return userFromResultSet(getFromDB(getConexao().getStatement(), NOME_TABELA_USERS, USERS_COLUNA_NOME, USERS_COLUNA_NOME));
-        }finally {
-            conexao.libertar();
+    private List<String> anexosFromResultSet(ResultSet resultSet) throws SQLException {
+        List<String> anexos = new ArrayList<String>();
+        while (resultSet.next()){
+            anexos.add(resultSet.getString(ANEXOS_COLUNA_PATH));
         }
+        return anexos;
     }
 
-    public User createUser(User newUser) throws SQLException {
+    /////////
+    // NEW //
+    /////////
+
+    public User newUser(User newUser) throws SQLException, KeyNotReturnedException, UserNotFoundException {
         ConexaoBD conexao = getConexao();
         try {
             conexao.getStatement().executeUpdate("insert into " + NOME_TABELA_USERS + " values (null,"
                     + newUser.getNome() + ","
                     + newUser.getPassword() + ","
                     + newUser.isPrivilegios());
-            return getUser(newUser.getNome());
+            ResultSet keys = conexao.getStatement().getGeneratedKeys();
+            if (keys.next()){
+                return getUser(keys.getInt(1));
+            } else throw new KeyNotReturnedException("New User didn't return key");
         }finally {
             conexao.libertar();
         }
     }
 
-    public OfertaRecursos getOfertaRecursos(int id) throws SQLException {
+    public OfertaRecursos newOfertaRecursos(OfertaRecursos newOfertaRecursos) throws SQLException, KeyNotReturnedException, OfertaRecursosNotFoundException {
         ConexaoBD conexao = getConexao();
         try {
-            return recursosFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_OFERTAS_RECURSOS, RECURSOS_COLUNA_ID, String.valueOf(id)));
-        } finally {
+            conexao.getStatement().executeUpdate("insert into " + NOME_TABELA_OFERTAS_RECURSOS + " values (null,"
+                    + newOfertaRecursos.getNome() + ","
+                    + newOfertaRecursos.getContacto() + ","
+                    + newOfertaRecursos.getAreaAtuacao().toString() + ","
+                    + newOfertaRecursos.getEstadoOferta().toString());
+            ResultSet keys = conexao.getStatement().getGeneratedKeys();
+            if (keys.next()){
+                return getOfertaRecursos(keys.getInt(1));
+            } else throw new KeyNotReturnedException("New OfertaRecursos didn't return key");
+        }finally {
             conexao.libertar();
         }
     }
 
-    public OfertaRecursos getOfertaRecursos(String nome) throws SQLException {
+    public OfertaEmprego newOfertaEmprego(OfertaEmprego newOfertaEmprego) throws SQLException, OfertaEmpregoNotFoundException, KeyNotReturnedException {
         ConexaoBD conexao = getConexao();
         try {
-            return recursosFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_OFERTAS_RECURSOS, RECURSOS_COLUNA_NOME,nome));
+            conexao.getStatement().executeUpdate("insert into " + NOME_TABELA_OFERTAS_EMPREGO + " values (null,"
+                    + newOfertaEmprego.getTitulo() + ","
+                    + newOfertaEmprego.getDetalhesOferta() + ","
+                    + newOfertaEmprego.getNumeroCandidatosNecessarios() + ","
+                    + newOfertaEmprego.getPerfilCandidatos() + ","
+                    + newOfertaEmprego.getEstadoOferta().toString());
+            ResultSet keys = conexao.getStatement().getGeneratedKeys();
+            if (keys.next()){
+                return getOfertaEmprego(keys.getInt(1));
+            } else throw new KeyNotReturnedException("New OfertaEmprego didn't return key");
+        }finally {
+            conexao.libertar();
+        }
+    }
+
+    /////////////////
+    // GET FROM BD //
+    /////////////////
+
+    public User getUser(int id) throws SQLException, UserNotFoundException {
+        ConexaoBD conexao = getConexao();
+        try {
+            for(User u : usersFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_USERS, USERS_COLUNA_ID, String.valueOf(id))))
+                return u;
+            throw new UserNotFoundException();
         } finally {
             conexao.libertar();
         }
     }
 
-    // PAREI AQUIIIII !!!!!
-
-    public OfertaRecursos newOfertaRecursos(OfertaRecursos ofertaRecursos) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
+    public OfertaRecursos getOfertaRecursos(int id) throws SQLException, OfertaRecursosNotFoundException {
+        ConexaoBD conexao = getConexao();
         try {
-            statement.executeUpdate("insert into users values (null," + ofertaRecursos.getNome() + ","
-                    + ofertaRecursos.getContacto() + ","
-                    + ofertaRecursos.getAreaAtuacao().toString() + ","
-                    + ofertaRecursos.getEstadoOferta().toString());
-            return getOfertaRecursos(ofertaRecursos.getNome());
-        }finally {
-            conexaoBD.libertar();
-            statement.close();
-        }
-    }
-
-    public OfertaEmprego getOfertaEmprego(int id) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
-        try {
-            ResultSet resultSet = statement.executeQuery("select * from "
-                    + NOME_TABELA_OFERTAS_EMPREGO + " left join " + NOME_TABELA_ANEXOS
-                    + " ON " + NOME_TABELA_OFERTAS_EMPREGO + "." + EMPREGO_COLUNA_ID
-                    + " = " + NOME_TABELA_ANEXOS + "." + ANEXOS_COLUNA_EMPREGO_ID
-                    + " where " + NOME_TABELA_OFERTAS_EMPREGO + "." + EMPREGO_COLUNA_ID + " = " + id);
-            if (resultSet.next()) {
-                OfertaEmprego ofertaEmprego = new OfertaEmprego(
-                        resultSet.getInt(EMPREGO_COLUNA_ID),
-                        resultSet.getString(EMPREGO_COLUNA_TITULO),
-                        resultSet.getString(EMPREGO_COLUNA_DETALHES),
-                        resultSet.getInt(EMPREGO_COLUNA_CANDIDATOS_NECESSARIOS),
-                        resultSet.getString(EMPREGO_COLUNA_PERFIL));
-                // ADICIONAR OS ANEXOS AQUI
-                return ofertaEmprego;
-            } else {
-                return null;
-            }
+            for(OfertaRecursos oR : recursosFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_OFERTAS_RECURSOS, RECURSOS_COLUNA_ID, String.valueOf(id))))
+                return oR;
+            throw new OfertaRecursosNotFoundException();
         } finally {
-            conexaoBD.libertar();
-            statement.close();
+            conexao.libertar();
         }
     }
 
-    public OfertaEmprego getOfertaEmprego(String titulo) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
+    public OfertaEmprego getOfertaEmprego(int id) throws SQLException, OfertaEmpregoNotFoundException {
+        ConexaoBD conexao = getConexao();
         try {
-            ResultSet resultSet = statement.executeQuery("select * from "
-                    + NOME_TABELA_OFERTAS_EMPREGO + " where " + EMPREGO_COLUNA_TITULO + " = " + titulo);
-            if (resultSet.next()) {
-                return getOfertaEmprego(resultSet.getInt(EMPREGO_COLUNA_ID));
-            } else {
-                return null;
-            }
+            for (OfertaEmprego oE : empregoFromResultSet(getFromDB(conexao.getStatement(), NOME_TABELA_OFERTAS_EMPREGO, EMPREGO_COLUNA_ID, String.valueOf(id))))
+                return oE;
+            throw new OfertaEmpregoNotFoundException();
         } finally {
-            conexaoBD.libertar();
-            statement.close();
-        }
-    }
-
-    public OfertaEmprego newOfertaEmprego(OfertaEmprego ofertaEmprego) throws SQLException {
-        ConexaoBD conexaoBD = getConnection();
-        Statement statement = conexaoBD.getConnection().createStatement();
-        try {
-            statement.executeUpdate("insert into users values (null," + ofertaEmprego.getTitulo() + ","
-                    + ofertaEmprego.getDetalhesOferta() + ","
-                    + ofertaEmprego.getNumeroCandidatosNecessarios() + ","
-                    + ofertaEmprego.getPerfilCandidatos());
-            return getOfertaEmprego(ofertaEmprego.getTitulo());
-        }finally {
-            conexaoBD.libertar();
-            statement.close();
+            conexao.libertar();
         }
     }
 }

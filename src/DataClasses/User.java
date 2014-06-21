@@ -1,7 +1,7 @@
 package DataClasses;
 
 /**
- * Created by -nikeiZprooo- on 28/05/2014.
+ * Classe User
  */
 public class User {
     private int id;
@@ -28,12 +28,12 @@ public class User {
         return password;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public boolean isPrivilegios() {
