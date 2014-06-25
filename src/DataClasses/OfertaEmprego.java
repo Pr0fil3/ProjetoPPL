@@ -25,6 +25,11 @@ public class OfertaEmprego extends Oferta {
         this.anexos = anexos;
     }
 
+    public OfertaEmprego(String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
+                         String perfilCandidatos, List<String> anexos){
+        this(0,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,anexos,ESTADO_OFERTA.POR_APROVAR);
+    }
+
     public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
                          String perfilCandidatos, ESTADO_OFERTA estadoOferta) {
         this(id,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,new ArrayList<String>(), estadoOferta);

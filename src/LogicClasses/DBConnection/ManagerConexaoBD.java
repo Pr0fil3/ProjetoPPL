@@ -168,7 +168,8 @@ public class ManagerConexaoBD {
                     + newOfertaRecursos.getNome() + ","
                     + newOfertaRecursos.getContacto() + ","
                     + newOfertaRecursos.getAreaAtuacao().toString() + ","
-                    + newOfertaRecursos.getEstadoOferta().toString());
+                    + newOfertaRecursos.getEstadoOferta().toString()+ ","
+                    + null);
             ResultSet keys = conexao.getStatement().getGeneratedKeys();
             if (keys.next()){
                 return getOfertaRecursos(keys.getInt(1));
@@ -189,7 +190,13 @@ public class ManagerConexaoBD {
                     + newOfertaEmprego.getEstadoOferta().toString());
             ResultSet keys = conexao.getStatement().getGeneratedKeys();
             if (keys.next()){
-                return getOfertaEmprego(keys.getInt(1));
+                int i = keys.getInt(1);
+                for(String path : newOfertaEmprego.getAnexos()){
+                    conexao.getStatement().executeUpdate("insert into " + NOME_TABELA_ANEXOS + " values ("
+                            + i + ","
+                            + path);
+                }
+                return getOfertaEmprego(i);
             } else throw new KeyNotReturnedException("New OfertaEmprego didn't return key");
         }finally {
             conexao.libertar();

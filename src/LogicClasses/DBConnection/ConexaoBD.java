@@ -1,5 +1,6 @@
 package LogicClasses.DBConnection;
 
+import org.gjt.mm.mysql.Driver;
 import java.sql.*;
 
 /**

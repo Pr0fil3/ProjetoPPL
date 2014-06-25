@@ -1,11 +1,15 @@
 package LogicClasses.Server;
 
+import DataClasses.Oferta;
 import DataClasses.OfertaEmprego;
 import DataClasses.OfertaRecursos;
 import DataClasses.User;
+import LogicClasses.DBConnection.Exceptions.KeyNotReturnedException;
+import LogicClasses.DBConnection.Exceptions.OfertaEmpregoNotFoundException;
+import LogicClasses.DBConnection.Exceptions.OfertaRecursosNotFoundException;
+import LogicClasses.DBConnection.Exceptions.UserNotFoundException;
 import LogicClasses.DBConnection.ManagerConexaoBD;
 import LogicClasses.Server.Exceptions.NoPrivilegesException;
-import LogicClasses.DBConnection.Exceptions.UserNotFoundException;
 import LogicClasses.Server.Exceptions.WrongPasswordException;
 
 import java.rmi.RemoteException;
@@ -20,13 +24,16 @@ import java.sql.SQLException;
 public class ServerImplementation extends UnicastRemoteObject implements IServerForRegister, IServerForAdmin {
     private ManagerConexaoBD mConexaoBD;
     private MessageDigest messageDigest;
+    private IServerUI serverUI;
 
-    public ServerImplementation() throws RemoteException, SQLException {
-        mConexaoBD = new ManagerConexaoBD();
+    public ServerImplementation(IServerUI serverUI) throws RemoteException, SQLException {
+        this.mConexaoBD = new ManagerConexaoBD();
+        this.serverUI = serverUI;
     }
 
-    public ServerImplementation(String url, String user, String password) throws RemoteException, SQLException {
+    public ServerImplementation(IServerUI serverUI, String url, String user, String password) throws RemoteException, SQLException {
         this.mConexaoBD = new ManagerConexaoBD(url, user, password);
+        this.serverUI = serverUI;
     }
 
     private String toMD5(String msg) {
@@ -36,7 +43,7 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
             messageDigest.reset();
             byte[] newMsgBytes = messageDigest.digest(msgBytes);
             StringBuffer stringBuffer = new StringBuffer();
-            for(int i=0;i<newMsgBytes.length;i++){
+            for (int i = 0; i < newMsgBytes.length; i++) {
                 stringBuffer.append(Integer.toHexString(0xff & newMsgBytes[i]));
             }
             return stringBuffer.toString();
@@ -47,39 +54,43 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
     }
 
     @Override
-    public User login(User user) throws SQLException, UserNotFoundException, WrongPasswordException {
-        if(user == null)
+     public User login(User user) throws SQLException, UserNotFoundException, WrongPasswordException {
+        if (user == null)
             throw new InvalidParameterException();
 
         User tempUser = mConexaoBD.getUser(user.getId());
 
-        if(tempUser == null)
+        if (tempUser == null)
             throw new UserNotFoundException();
 
         String userPassword = toMD5(user.getPassword());
-        if(tempUser.getPassword().equals(userPassword)){
-            return user;
-        }
-        else throw new WrongPasswordException();
+        if (userPassword.equals(tempUser.getPassword())) {
+            return tempUser;
+        } else throw new WrongPasswordException();
     }
 
     @Override
-    public User newUser(User user, User newUser) throws RemoteException, NoPrivilegesException, SQLException {
+    public User newUser(User user, User newUser) throws RemoteException, NoPrivilegesException, SQLException, KeyNotReturnedException, UserNotFoundException {
         if (user == null || newUser == null)
             throw new InvalidParameterException();
 
         if (user.isPrivilegios()) {
             newUser.setPassword(toMD5(newUser.getPassword()));
-            return mConexaoBD.createUser(newUser);
+            return mConexaoBD.newUser(newUser);
         } else throw new NoPrivilegesException();
     }
 
-    public OfertaRecursos novaOferta(OfertaRecursos ofertaRecursos) throws RemoteException {
-        return null;
+    @Override
+    public Oferta novaOferta(OfertaRecursos ofertaRecursos) throws RemoteException, SQLException, KeyNotReturnedException, OfertaRecursosNotFoundException {
+        if (ofertaRecursos == null)
+            throw new InvalidParameterException();
+        return mConexaoBD.newOfertaRecursos(ofertaRecursos);
     }
 
     @Override
-    public OfertaRecursos novaOferta(OfertaEmprego ofertaEmprego) throws RemoteException {
-        return null;
+    public Oferta novaOferta(OfertaEmprego ofertaEmprego) throws RemoteException, SQLException, KeyNotReturnedException, OfertaEmpregoNotFoundException {
+        if (ofertaEmprego == null)
+            throw new InvalidParameterException();
+        return mConexaoBD.newOfertaEmprego(ofertaEmprego);
     }
 }

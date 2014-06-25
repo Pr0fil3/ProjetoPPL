@@ -39,4 +39,8 @@ public class User {
     public boolean isPrivilegios() {
         return privilegios;
     }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }

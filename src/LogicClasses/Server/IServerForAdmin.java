@@ -1,6 +1,7 @@
 package LogicClasses.Server;
 
 import DataClasses.User;
+import LogicClasses.DBConnection.Exceptions.KeyNotReturnedException;
 import LogicClasses.Server.Exceptions.NoPrivilegesException;
 import LogicClasses.DBConnection.Exceptions.UserNotFoundException;
 import LogicClasses.Server.Exceptions.WrongPasswordException;
@@ -14,5 +15,5 @@ import java.sql.SQLException;
  */
 public interface IServerForAdmin extends Remote {
     public User login(User user) throws RemoteException, SQLException, UserNotFoundException, WrongPasswordException;
-    public User newUser(User user, User newUser) throws RemoteException, NoPrivilegesException, SQLException;
+    public User newUser(User user, User newUser) throws RemoteException, NoPrivilegesException, SQLException, KeyNotReturnedException, UserNotFoundException;
 }
