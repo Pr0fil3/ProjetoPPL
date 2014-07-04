@@ -1,9 +1,11 @@
 package DataClasses;
 
+import java.io.Serializable;
+
 /**
  * Classe User
  */
-public class User {
+public class User implements Serializable{
     private int id;
     private String nome;
     private String password;
@@ -18,6 +20,10 @@ public class User {
 
     public User(String nome, String password, boolean privilegios) {
         this(0,nome,password,privilegios);
+    }
+
+    public User(String nome, String password) {
+        this(nome,password,false);
     }
 
     public String getNome() {

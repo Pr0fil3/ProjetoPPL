@@ -1,23 +1,21 @@
 package DataClasses;
 
+import java.io.Serializable;
+
 /**
  * Classe OfertaRecursos extende Oferta
  */
-public class OfertaRecursos extends Oferta {
-    public static enum AREA_ATUACAO {REDE, DESENVOLVIMENTO, BASES_DADOS};
-
+public class OfertaRecursos extends Oferta implements Serializable{
     private int id;
     private String nome;
     private String contacto;
-    private AREA_ATUACAO areaAtuacao;
     private int empregoId;
 
     public OfertaRecursos(int id, String nome, String contacto, int empregoId, AREA_ATUACAO areaAtuacao, ESTADO_OFERTA estadoOferta) {
-        super(estadoOferta);
+        super(estadoOferta, areaAtuacao);
         this.id = id;
         this.nome = nome;
         this.contacto = contacto;
-        this.areaAtuacao = areaAtuacao;
         this.empregoId = empregoId;
     }
 
@@ -27,15 +25,6 @@ public class OfertaRecursos extends Oferta {
 
     public OfertaRecursos(String nome, String contacto, AREA_ATUACAO areaAtuacao) {
         this(0,nome,contacto,0,areaAtuacao,ESTADO_OFERTA.POR_APROVAR);
-    }
-
-    public static AREA_ATUACAO parseAreaAtuacao(String estado) {
-        if(estado.equals(AREA_ATUACAO.REDE.toString()))
-            return AREA_ATUACAO.REDE;
-        else if(estado.equals(AREA_ATUACAO.DESENVOLVIMENTO.toString()))
-            return AREA_ATUACAO.DESENVOLVIMENTO;
-        else
-            return AREA_ATUACAO.BASES_DADOS;
     }
 
     public String getNome() {
@@ -56,10 +45,6 @@ public class OfertaRecursos extends Oferta {
 
     public void setContacto(String contacto) {
         this.contacto = contacto;
-    }
-
-    public AREA_ATUACAO getAreaAtuacao() {
-        return areaAtuacao;
     }
 
     public int getEmpregoId() {

@@ -1,12 +1,13 @@
 package DataClasses;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Classe OfertaEmprego, extende Oferta
  */
-public class OfertaEmprego extends Oferta {
+public class OfertaEmprego extends Oferta implements Serializable{
     private int id;
     private String titulo;
     private String detalhesOferta;
@@ -15,8 +16,8 @@ public class OfertaEmprego extends Oferta {
     private List<String> anexos;
 
     public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
-                         String perfilCandidatos, List<String> anexos, ESTADO_OFERTA estadoOferta) {
-        super(estadoOferta);
+                         String perfilCandidatos, List<String> anexos, AREA_ATUACAO areaAtuacao, ESTADO_OFERTA estadoOferta) {
+        super(estadoOferta, areaAtuacao);
         this.id = id;
         this.titulo = titulo;
         this.detalhesOferta = detalhesOferta;
@@ -26,23 +27,23 @@ public class OfertaEmprego extends Oferta {
     }
 
     public OfertaEmprego(String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
-                         String perfilCandidatos, List<String> anexos){
-        this(0,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,anexos,ESTADO_OFERTA.POR_APROVAR);
+                         String perfilCandidatos, AREA_ATUACAO areaAtuacao, List<String> anexos){
+        this(0,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,anexos, areaAtuacao,ESTADO_OFERTA.POR_APROVAR);
     }
 
     public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
-                         String perfilCandidatos, ESTADO_OFERTA estadoOferta) {
-        this(id,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,new ArrayList<String>(), estadoOferta);
+                         String perfilCandidatos,AREA_ATUACAO areaAtuacao, ESTADO_OFERTA estadoOferta) {
+        this(id,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,new ArrayList<String>(), areaAtuacao, estadoOferta);
     }
 
     public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
-                         String perfilCandidatos) {
-        this(id,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,ESTADO_OFERTA.POR_APROVAR);
+                         String perfilCandidatos, AREA_ATUACAO areaAtuacao) {
+        this(id,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos, areaAtuacao, ESTADO_OFERTA.POR_APROVAR);
     }
 
     public OfertaEmprego(String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
-                         String perfilCandidatos) {
-        this(0,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos,ESTADO_OFERTA.POR_APROVAR);
+                         String perfilCandidatos, AREA_ATUACAO areaAtuacao) {
+        this(0,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos, areaAtuacao,ESTADO_OFERTA.POR_APROVAR);
     }
 
     public int getId() {
