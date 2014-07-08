@@ -1,13 +1,13 @@
-package LogicClasses.DBConnection;
+package LogicClasses.ConexoesBD;
 
 import DataClasses.Oferta;
 import DataClasses.OfertaEmprego;
 import DataClasses.OfertaRecursos;
 import DataClasses.User;
-import LogicClasses.DBConnection.Exceptions.KeyNotReturnedException;
-import LogicClasses.DBConnection.Exceptions.OfertaEmpregoNotFoundException;
-import LogicClasses.DBConnection.Exceptions.OfertaRecursosNotFoundException;
-import LogicClasses.DBConnection.Exceptions.UserNotFoundException;
+import LogicClasses.ConexoesBD.Exceptions.KeyNotReturnedException;
+import LogicClasses.ConexoesBD.Exceptions.OfertaEmpregoNotFoundException;
+import LogicClasses.ConexoesBD.Exceptions.OfertaRecursosNotFoundException;
+import LogicClasses.ConexoesBD.Exceptions.UserNotFoundException;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class ManagerConexaoBD {
     public static String ANEXOS_COLUNA_EMPREGO_ID = "emprego_id";
     public static String ANEXOS_COLUNA_PATH = "anexo_path";
 
-    private List<ConexaoBD> conexoes = new ArrayList<>();
+    private final List<ConexaoBD> conexoes = new ArrayList<>();
 
     public ManagerConexaoBD() throws SQLException {
         for(int i = 0; i < 5; i++)
@@ -115,22 +115,13 @@ public class ManagerConexaoBD {
         while (resultSet.next()){
             int id = resultSet.getInt(EMPREGO_COLUNA_ID);
 
-            // Ir buscar os anexos do emprego
-            ConexaoBD conexao = getConexao();
-            List<String> anexos = new ArrayList<>();
-            try{
-                anexos = anexosFromResultSet(getFromDB(conexao.getStatement(),NOME_TABELA_ANEXOS, ANEXOS_COLUNA_EMPREGO_ID, String.valueOf(id)));
-            } finally {
-                conexao.libertar();
-            }
-
             OfertaEmprego newOfertaEmprego = new OfertaEmprego(
                     id,
                     resultSet.getString(EMPREGO_COLUNA_TITULO),
                     resultSet.getString(EMPREGO_COLUNA_DETALHES),
                     resultSet.getInt(EMPREGO_COLUNA_CANDIDATOS_NECESSARIOS),
                     resultSet.getString(EMPREGO_COLUNA_PERFIL),
-                    anexos,
+                    getAnexos(id),
                     OfertaEmprego.parseAreaAtuacao(resultSet.getString(EMPREGO_COLUNA_AREA_ATUACAO)),
                     OfertaEmprego.parseEstadoOferta(resultSet.getString(EMPREGO_COLUNA_ESTADO_OFERTA)));
             emprego.add(newOfertaEmprego);
@@ -171,8 +162,8 @@ public class ManagerConexaoBD {
         ConexaoBD conexao = getConexao();
         try {
             conexao.getStatement().executeUpdate("insert into " + NOME_TABELA_USERS + " values (null,"
-                    + newUser.getNome() + ","
-                    + newUser.getPassword() + ","
+                    + "'" + newUser.getNome() + "'" + ","
+                    + "'" + newUser.getPassword() + "'" + ","
                     + newUser.isPrivilegios() + ")"
                     , Statement.RETURN_GENERATED_KEYS);
             ResultSet keys = conexao.getStatement().getGeneratedKeys();
@@ -197,8 +188,8 @@ public class ManagerConexaoBD {
                     + ") VALUES ("
                     + "'" + newOfertaRecursos.getNome() + "'"  + ","
                     + "'" + newOfertaRecursos.getContacto() + "'" + ","
-                    + "'" + newOfertaRecursos.getAreaAtuacao().toString() + "'" + ","
-                    + "'" + newOfertaRecursos.getEstadoOferta().toString() + "');");
+                    + "'" + newOfertaRecursos.getAreaAtuacao().name() + "'" + ","
+                    + "'" + newOfertaRecursos.getEstadoOferta().name() + "');");
         }finally {
             conexao.libertar();
         }
@@ -221,8 +212,8 @@ public class ManagerConexaoBD {
                     + "'" + newOfertaEmprego.getDetalhesOferta() + "'" + ","
                     + "'" + newOfertaEmprego.getNumeroCandidatosNecessarios() + "'" + ","
                     + "'" + newOfertaEmprego.getPerfilCandidatos() + "'" + ","
-                    + "'" + newOfertaEmprego.getAreaAtuacao().toString() + "'" + ","
-                    + "'" + newOfertaEmprego.getEstadoOferta().toString() + "');"
+                    + "'" + newOfertaEmprego.getAreaAtuacao().name() + "'" + ","
+                    + "'" + newOfertaEmprego.getEstadoOferta().name() + "');"
                     , Statement.RETURN_GENERATED_KEYS);
             ResultSet keys = conexao.getStatement().getGeneratedKeys();
             if(keys.next()){
@@ -289,17 +280,28 @@ public class ManagerConexaoBD {
         }
     }
     
+    public List<String> getAnexos(int id) throws SQLException{
+        ConexaoBD conexao = getConexao();
+        List<String> anexos = new ArrayList<>();
+        try{
+            return anexosFromResultSet(getFromDB(conexao.getStatement(),NOME_TABELA_ANEXOS, ANEXOS_COLUNA_EMPREGO_ID, String.valueOf(id)));
+        } finally {
+            conexao.libertar();
+        }
+    }
+    
     //////////////////////
     // GET REVIEW CASES //
     //////////////////////
     
-    public OfertaEmprego getEmpregoToReview() throws SQLException, OfertaEmpregoNotFoundException{
+    public OfertaEmprego getEmpregoToReview(ArrayList<Oferta> ofertasEmAnalise) throws SQLException, OfertaEmpregoNotFoundException{
         ConexaoBD conexao = getConexao();
         try{
             for (OfertaEmprego oferta : empregoAndAnexosFromResultSet(conexao.getStatement().executeQuery("select *"
                     + " from " + NOME_TABELA_OFERTAS_EMPREGO
-                    + " where " + EMPREGO_COLUNA_ESTADO_OFERTA + " = " + Oferta.ESTADO_OFERTA.APROVACAO_PROVISORIA.toString()))){
-                return oferta;
+                    + " where " + EMPREGO_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.APROVACAO_PROVISORIA.name() + "'"))){
+                if(!ofertasEmAnalise.contains(oferta))
+                    return oferta;
             }
             throw new OfertaEmpregoNotFoundException();
         } finally {
@@ -307,15 +309,56 @@ public class ManagerConexaoBD {
         }
     }
     
-    public OfertaRecursos getRecursoToReview() throws SQLException, OfertaRecursosNotFoundException{
+    public OfertaRecursos getRecursoToReview(ArrayList<Oferta> ofertasEmAnalise) throws SQLException, OfertaRecursosNotFoundException{
         ConexaoBD conexao = getConexao();
         try {
             for (OfertaRecursos oferta : recursosFromResultSet(conexao.getStatement().executeQuery("select *"
                     + " from " + NOME_TABELA_OFERTAS_RECURSOS
-                    + " where " + RECURSOS_COLUNA_ESTADO_OFERTA + " = " + Oferta.ESTADO_OFERTA.TERMINADO.toString()))){
-                return oferta;
+                    + " where " + RECURSOS_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.POR_APROVAR.name() + "'"))){
+                if(!ofertasEmAnalise.contains(oferta))
+                    return oferta;
             }
             throw new OfertaRecursosNotFoundException();
+        } finally {
+            conexao.libertar();
+        }
+    }
+    
+    /////////////////
+    // REVIEW CASE //
+    /////////////////
+    
+    public void reviewEmprego(int id, boolean analise) throws SQLException{
+        ConexaoBD conexao = getConexao();
+        try{
+            if(analise)
+                conexao.getStatement().executeUpdate("update " + NOME_TABELA_OFERTAS_EMPREGO
+                        + " set " + EMPREGO_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.APROVADO.name() + "'"
+                        + " where " + EMPREGO_COLUNA_ID + " = " + id);
+            else {
+                conexao.getStatement().executeUpdate("update " + NOME_TABELA_OFERTAS_EMPREGO
+                        + " set " + EMPREGO_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.NAO_APROVADO.name() + "'"
+                        + " where " + EMPREGO_COLUNA_ID + " = " + id);
+                conexao.getStatement().executeUpdate("update " + NOME_TABELA_OFERTAS_RECURSOS
+                        + " set " + RECURSOS_COLUNA_EMPREGO_ID + " = null, " + RECURSOS_COLUNA_IS_NEW + " = true"
+                        + " where " + RECURSOS_COLUNA_EMPREGO_ID + " = " + id);
+            }
+        } finally {
+            conexao.libertar();
+        }
+    }
+    
+    public void reviewRecurso(int id, boolean analise) throws SQLException{
+        ConexaoBD conexao = getConexao();
+        try{
+            if(analise)
+                conexao.getStatement().executeUpdate("update " + NOME_TABELA_OFERTAS_RECURSOS
+                        + " set " + RECURSOS_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.APROVADO.name() + "'"
+                        + " where " + RECURSOS_COLUNA_ID + " = " + id);
+            else
+                conexao.getStatement().executeUpdate("update " + NOME_TABELA_OFERTAS_RECURSOS
+                        + " set " + RECURSOS_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.NAO_APROVADO.name() + "'"
+                        + " where " + RECURSOS_COLUNA_ID + " = " + id);
         } finally {
             conexao.libertar();
         }

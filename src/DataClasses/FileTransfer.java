@@ -32,6 +32,7 @@ public class FileTransfer implements Serializable{
             file.createNewFile();
             FileOutputStream fos = new FileOutputStream(file);
             fos.write(ficheiro);
+            fos.close();
             return true;
         } else return false;
     }

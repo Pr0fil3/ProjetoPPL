@@ -11,7 +11,7 @@ import LogicClasses.ClientRegister.Exceptions.NameNotValidException;
 import LogicClasses.ClientRegister.Exceptions.NumeroCandidatosNotValidException;
 import LogicClasses.ClientRegister.Exceptions.PerfilCandidatosNotValidException;
 import LogicClasses.ClientRegister.Exceptions.TituloNotValidException;
-import LogicClasses.DBConnection.Exceptions.KeyNotReturnedException;
+import LogicClasses.ConexoesBD.Exceptions.KeyNotReturnedException;
 import LogicClasses.Server.IServerForRegister;
 import java.io.File;
 import java.io.IOException;

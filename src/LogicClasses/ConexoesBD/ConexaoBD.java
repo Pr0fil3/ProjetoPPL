@@ -1,4 +1,4 @@
-package LogicClasses.DBConnection;
+package LogicClasses.ConexoesBD;
 
 import java.sql.*;
 

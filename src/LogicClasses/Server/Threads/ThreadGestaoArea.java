@@ -8,20 +8,19 @@ package LogicClasses.Server.Threads;
 import DataClasses.Oferta;
 import DataClasses.OfertaEmprego;
 import LogicClasses.ClientAdmin.Exceptions.UserNotLoggedInException;
-import LogicClasses.DBConnection.ConexaoBD;
-import LogicClasses.DBConnection.Exceptions.OfertaEmpregoNotFoundException;
-import LogicClasses.DBConnection.Exceptions.OfertaRecursosNotFoundException;
-import static LogicClasses.DBConnection.ManagerConexaoBD.*;
+import LogicClasses.ConexoesBD.ConexaoBD;
+import LogicClasses.ConexoesBD.Exceptions.OfertaEmpregoNotFoundException;
+import LogicClasses.ConexoesBD.Exceptions.OfertaRecursosNotFoundException;
+import static LogicClasses.ConexoesBD.ManagerConexaoBD.*;
 import LogicClasses.Server.Exceptions.NoPrivilegesException;
 import LogicClasses.Server.IServerUI;
 import LogicClasses.Server.ServerImplementation;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -33,15 +32,21 @@ public class ThreadGestaoArea extends Thread {
     private final ConexaoBD conexao;
     private final IServerUI serverUI;
     private final ServerImplementation server;
+    private final int tempoWaitVerificacoesLocais;
+    private final int tempoWaitVerificacoesBD;
 
     private final Queue<Integer> ofertasRecursosLivres;
 
-    public ThreadGestaoArea(ServerImplementation server, IServerUI serverUI, Oferta.AREA_ATUACAO areaAtuacao, ConexaoBD conexao) {
+    public ThreadGestaoArea(ServerImplementation server, IServerUI serverUI,
+            Oferta.AREA_ATUACAO areaAtuacao, ConexaoBD conexao,
+            int tempoWaitVerificacoesLocais, int tempoWaitVerificacoesBD) {
         this.areaAtuacao = areaAtuacao;
         this.conexao = conexao;
         this.serverUI = serverUI;
         this.server = server;
         this.ofertasRecursosLivres = new LinkedList<>();
+        this.tempoWaitVerificacoesBD = tempoWaitVerificacoesBD;
+        this.tempoWaitVerificacoesLocais = tempoWaitVerificacoesLocais;
     }
 
     public void adicionarOfertaRecursosLivre(int id) {
@@ -51,8 +56,8 @@ public class ThreadGestaoArea extends Thread {
     private OfertaEmprego buscarOfertaEmpregoLivre() {
         try {
             List<OfertaEmprego> listaEmpregoLivre = empregoFromResultSet(conexao.getStatement().executeQuery("select * from " + NOME_TABELA_OFERTAS_EMPREGO
-                    + " where " + EMPREGO_COLUNA_AREA_ATUACAO + " = " + "'" + areaAtuacao.toString() + "'"
-                    + " and " + EMPREGO_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.POR_APROVAR.toString() + "'"));
+                    + " where " + EMPREGO_COLUNA_AREA_ATUACAO + " = " + "'" + areaAtuacao.name() + "'"
+                    + " and " + EMPREGO_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.POR_APROVAR.name() + "'"));
             for (OfertaEmprego emprego : listaEmpregoLivre) {
                 return emprego;
             }
@@ -68,21 +73,21 @@ public class ThreadGestaoArea extends Thread {
             synchronized (this) {
                 while (true) {
                     while (ofertasRecursosLivres.isEmpty()) {
-                        wait(1000);
+                        wait(tempoWaitVerificacoesLocais);
                     }
                     OfertaEmprego empregoLivre = buscarOfertaEmpregoLivre();
                     while (empregoLivre == null) {
-                        wait(5000);
+                        wait(tempoWaitVerificacoesBD);
                         empregoLivre = buscarOfertaEmpregoLivre();
                     }
-                    while (empregoLivre.getNumeroCandidatosNecessarios() >= ofertasRecursosLivres.size()) {
-                        wait(1000);
+                    while (empregoLivre.getNumeroCandidatosNecessarios() > ofertasRecursosLivres.size()) {
+                        wait(tempoWaitVerificacoesLocais);
                     }
                     try {
                         for (int i = 0; i < empregoLivre.getNumeroCandidatosNecessarios(); i++) {
                             serverUI.sendMessage("O recurso de ID "
                                     + ofertasRecursosLivres.peek() + " da área "
-                                    + areaAtuacao.toString()
+                                    + areaAtuacao.name()
                                     + " foi vinculada ao emprego de ID "
                                     + empregoLivre.getId() + ".");
 
@@ -94,22 +99,16 @@ public class ThreadGestaoArea extends Thread {
                         serverUI.sendMessage("O emprego de ID " + empregoLivre.getId() + " foi dado como aprovado provisoriamente.");
 
                         conexao.getStatement().executeUpdate("update " + NOME_TABELA_OFERTAS_EMPREGO
-                                + " set " + EMPREGO_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.APROVACAO_PROVISORIA.toString() + "'"
+                                + " set " + EMPREGO_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.APROVACAO_PROVISORIA.name() + "'"
                                 + " where " + EMPREGO_COLUNA_ID + " = " + "'" + empregoLivre.getId() + "'");
 
                         server.existemNovasOfertas();
                     } catch (SQLException ex) {
                         serverUI.sendMessage("Erro de SQL em ThreadGestaoArea.run()...");
-                    } catch (RemoteException ex) {
-                        serverUI.sendMessage("Não foi possivel contactar o client sobre novas ofertas.");
-                    } catch (OfertaEmpregoNotFoundException ex) {
-                        // Exceptions não relevantes para esta classe.
-                    } catch (NoPrivilegesException ex) {
-                        // Exceptions não relevantes para esta classe.
-                    } catch (OfertaRecursosNotFoundException ex) {
-                        // Exceptions não relevantes para esta classe.
-                    } catch (UserNotLoggedInException ex) {
-                        // Exceptions não relevantes para esta classe.
+                    } catch (RemoteException | OfertaEmpregoNotFoundException | NoPrivilegesException | OfertaRecursosNotFoundException | UserNotLoggedInException ex) {
+                        serverUI.sendMessage("Foi dado como aprovado provisoriamente uma nova oferta de recursos mas a tentativa de notificar os clientes dos administradores falhou.");
+                    } catch (IOException ex) {
+                        serverUI.sendMessage("Erro com no sistema de ficheiros do servidor.");
                     }
                 }
             }

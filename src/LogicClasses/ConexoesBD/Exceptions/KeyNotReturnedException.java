@@ -1,4 +1,4 @@
-package LogicClasses.DBConnection.Exceptions;
+package LogicClasses.ConexoesBD.Exceptions;
 
 /**
  * Created by -nikeiZprooo- on 20/06/2014.

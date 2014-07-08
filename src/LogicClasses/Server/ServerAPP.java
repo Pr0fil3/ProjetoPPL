@@ -6,6 +6,8 @@
 
 package LogicClasses.Server;
 
+import java.io.File;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -13,6 +15,12 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import javax.swing.JOptionPane;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -20,26 +28,50 @@ import javax.swing.JOptionPane;
  */
 public class ServerAPP extends javax.swing.JFrame implements IServerUI{
     private ServerImplementation server;
-    private SimpleDateFormat dateFormat;
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm:ss - ");
     
     /**
      * Creates new form ServerAPP
      */
     public ServerAPP() {
         initComponents();
-        
         System.runFinalizersOnExit(true);
         
-        dateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm:ss - ");
-        
         try {
-            sendMessage("A criar ligações à base de dados...");
-            this.server = new ServerImplementation(this);
+            sendMessage("### --- ### --- ### ---   --- ### --- ### --- ###");
+            sendMessage("A abrir ficheiro de configuração...");
+            File XMLConfig = new File("src\\LogicClasses\\Server\\ConfigFiles\\Config.xml");
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(XMLConfig);
+            sendMessage("A lêr os parâmetros...");
+            doc.getDocumentElement().normalize();
+            Element dataBaseElement = (Element) doc.getElementsByTagName("database").item(0);
+            Element accessIntervalsElement = (Element) doc.getElementsByTagName("accessIntervals").item(0);
+            
+            String url = dataBaseElement.getElementsByTagName("url").item(0).getTextContent();
+            int tempoScheduler = Integer.parseInt(accessIntervalsElement.getElementsByTagName("scheduler").item(0).getTextContent());
+            int tempoChecksLocais = Integer.parseInt(accessIntervalsElement.getElementsByTagName("ramData").item(0).getTextContent());
+            int tempoChecksBD = Integer.parseInt(accessIntervalsElement.getElementsByTagName("dbData").item(0).getTextContent());
+            
+            sendMessage("A criar ligações à base de dados em " + url + "...");
+            sendMessage("Os delays serão (em Milisegundos):"
+                    + " Scheduler: " + tempoScheduler 
+                    + " | Checks Locais: " + tempoChecksLocais 
+                    + " | Checks à BD: " + tempoChecksBD);
+            
+            this.server = new ServerImplementation(this, 
+                    url,
+                    dataBaseElement.getElementsByTagName("user").item(0).getTextContent(),
+                    dataBaseElement.getElementsByTagName("password").item(0).getTextContent(),
+                    tempoScheduler,
+                    tempoChecksLocais,
+                    tempoChecksBD);
             sendMessage("Ligações criadas!");
             sendMessage("A criar o servidor de RMI...");
             Registry reg = LocateRegistry.createRegistry(1099);
             reg.rebind("server", server);
-            sendMessage("Servidor pronto!!!");
+            sendMessage("### --- ### --- Servidor pronto --- ### --- ###");
         } catch (RemoteException ex) {
             JOptionPane.showMessageDialog(this, "Erro ao criar o servidor de RMI... a fechar...");
             System.exit(0);
@@ -50,6 +82,14 @@ public class ServerAPP extends javax.swing.JFrame implements IServerUI{
             // Erro que nunca acontece...
             JOptionPane.showMessageDialog(this, "Erro... A sair");
             System.exit(0);
+        } catch (ParserConfigurationException | SAXException ex) {
+            JOptionPane.showMessageDialog(this, "O ficheiro de configuração não está bem formatado... a fechar...");
+            System.exit(0);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "O ficheiro de configuração não foi encontrado... a fechar...");
+            System.exit(0);
+        } catch (NumberFormatException ex){
+            JOptionPane.showMessageDialog(this, "Os tempos de espera do ficheiro de configuração não são válidos... a fechar...");
         }
     }
     
@@ -73,6 +113,7 @@ public class ServerAPP extends javax.swing.JFrame implements IServerUI{
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Projeto PP - Server");
         setPreferredSize(new java.awt.Dimension(800, 600));
+        setResizable(false);
         getContentPane().setLayout(new java.awt.CardLayout());
 
         consolaTextArea.setEditable(false);

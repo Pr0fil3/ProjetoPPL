@@ -14,7 +14,7 @@ import LogicClasses.ClientRegister.Exceptions.DetalhesOfertaNotValidException;
 import LogicClasses.ClientRegister.Exceptions.NumeroCandidatosNotValidException;
 import LogicClasses.ClientRegister.Exceptions.PerfilCandidatosNotValidException;
 import LogicClasses.ClientRegister.Exceptions.TituloNotValidException;
-import LogicClasses.DBConnection.Exceptions.KeyNotReturnedException;
+import LogicClasses.ConexoesBD.Exceptions.KeyNotReturnedException;
 import java.io.File;
 import java.io.IOException;
 import java.rmi.RemoteException;

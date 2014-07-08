@@ -65,6 +65,7 @@ public class ClientAPP extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Projeto PP - Client Register");
+        setResizable(false);
         getContentPane().setLayout(new java.awt.CardLayout());
 
         mainPanel.setLayout(new java.awt.CardLayout());

@@ -6,14 +6,12 @@ import java.io.Serializable;
  * Classe OfertaRecursos extende Oferta
  */
 public class OfertaRecursos extends Oferta implements Serializable{
-    private int id;
     private String nome;
     private String contacto;
     private int empregoId;
 
     public OfertaRecursos(int id, String nome, String contacto, int empregoId, AREA_ATUACAO areaAtuacao, ESTADO_OFERTA estadoOferta) {
-        super(estadoOferta, areaAtuacao);
-        this.id = id;
+        super(id, estadoOferta, areaAtuacao);
         this.nome = nome;
         this.contacto = contacto;
         this.empregoId = empregoId;
@@ -29,10 +27,6 @@ public class OfertaRecursos extends Oferta implements Serializable{
 
     public String getNome() {
         return nome;
-    }
-
-    public int getId() {
-        return id;
     }
 
     public void setNome(String nome) {
@@ -53,5 +47,19 @@ public class OfertaRecursos extends Oferta implements Serializable{
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(o == null)
+            return false;
+        else if (o == this)
+            return true;
+        else if (o instanceof OfertaRecursos){
+            OfertaRecursos ofertaRecursos = (OfertaRecursos) o;
+            return this.id == ofertaRecursos.id 
+                    && this.nome.equals(ofertaRecursos.nome)
+                    && this.contacto.equals(ofertaRecursos.contacto);
+        } else return false;
     }
 }

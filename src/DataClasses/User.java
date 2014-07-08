@@ -5,7 +5,8 @@ import java.io.Serializable;
 /**
  * Classe User
  */
-public class User implements Serializable{
+public class User implements Serializable {
+
     private int id;
     private String nome;
     private String password;
@@ -19,11 +20,15 @@ public class User implements Serializable{
     }
 
     public User(String nome, String password, boolean privilegios) {
-        this(0,nome,password,privilegios);
+        this(0, nome, password, privilegios);
+    }
+
+    public User(int id, String password) {
+        this(id, "", password, false);
     }
 
     public User(String nome, String password) {
-        this(nome,password,false);
+        this(nome, password, false);
     }
 
     public String getNome() {

@@ -7,12 +7,12 @@ import DataClasses.OfertaRecursos;
 import DataClasses.User;
 import LogicClasses.ClientAdmin.Exceptions.UserNotLoggedInException;
 import LogicClasses.ClientAdmin.IClientAdmin;
-import LogicClasses.DBConnection.ConexaoBD;
-import LogicClasses.DBConnection.Exceptions.KeyNotReturnedException;
-import LogicClasses.DBConnection.Exceptions.OfertaEmpregoNotFoundException;
-import LogicClasses.DBConnection.Exceptions.OfertaRecursosNotFoundException;
-import LogicClasses.DBConnection.Exceptions.UserNotFoundException;
-import LogicClasses.DBConnection.ManagerConexaoBD;
+import LogicClasses.ConexoesBD.ConexaoBD;
+import LogicClasses.ConexoesBD.Exceptions.KeyNotReturnedException;
+import LogicClasses.ConexoesBD.Exceptions.OfertaEmpregoNotFoundException;
+import LogicClasses.ConexoesBD.Exceptions.OfertaRecursosNotFoundException;
+import LogicClasses.ConexoesBD.Exceptions.UserNotFoundException;
+import LogicClasses.ConexoesBD.ManagerConexaoBD;
 import LogicClasses.Server.Exceptions.NoPrivilegesException;
 import LogicClasses.Server.Exceptions.WrongPasswordException;
 import LogicClasses.Server.Threads.JobScheduler;
@@ -26,6 +26,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 
@@ -36,30 +37,35 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
 
     private final ManagerConexaoBD mConexaoBD;
     private final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-    private final Timer jobScheduler;
-    
+
     private final IServerUI serverUI;
     private final ArrayList<IClientAdmin> adminClients = new ArrayList<>();
-    private final ArrayList<Oferta> ofertasEmAnálise = new ArrayList<>();
+    private final ArrayList<Oferta> ofertasEmAnalise = new ArrayList<>();
     private final Random random = new Random();
 
-    public ServerImplementation(IServerUI serverUI) throws RemoteException, SQLException, NoSuchAlgorithmException {
+    public ServerImplementation(IServerUI serverUI,
+            int tempoWaitVerificacoesLocais, int tempoWaitVerificacoesBD)
+            throws RemoteException, SQLException, NoSuchAlgorithmException {
         this.mConexaoBD = new ManagerConexaoBD();
-        jobScheduler = new Timer();
-        jobScheduler.scheduleAtFixedRate(new JobScheduler(this,serverUI,
-                new ConexaoBD(), new ConexaoBD(),
-                new ConexaoBD(), new ConexaoBD()), 10000, 30000);
         this.serverUI = serverUI;
+        new Timer().scheduleAtFixedRate(new JobScheduler(this, serverUI,
+                new ConexaoBD(), new ConexaoBD(),
+                new ConexaoBD(), new ConexaoBD(),
+                tempoWaitVerificacoesLocais,tempoWaitVerificacoesBD), 
+                tempoWaitVerificacoesBD, tempoWaitVerificacoesBD);
     }
 
-    public ServerImplementation(IServerUI serverUI, String url, String user, String password)
+    public ServerImplementation(IServerUI serverUI, String url,
+            String user, String password, int tempoWaitScheduler,
+            int tempoWaitVerificacoesLocais, int tempoWaitVerificacoesBD)
             throws RemoteException, SQLException, NoSuchAlgorithmException {
         this.mConexaoBD = new ManagerConexaoBD(url, user, password);
-        jobScheduler = new Timer();
-        jobScheduler.scheduleAtFixedRate(new JobScheduler(this,serverUI,
-                new ConexaoBD(url, user, password), new ConexaoBD(url, user, password),
-                new ConexaoBD(url, user, password), new ConexaoBD(url, user, password)), 10000, 30000);
         this.serverUI = serverUI;
+        new Timer().scheduleAtFixedRate(new JobScheduler(this, serverUI,
+                new ConexaoBD(url, user, password), new ConexaoBD(url, user, password),
+                new ConexaoBD(url, user, password), new ConexaoBD(url, user, password),
+                tempoWaitVerificacoesLocais,tempoWaitVerificacoesBD), 
+                tempoWaitScheduler, tempoWaitScheduler);
     }
 
     private String toMD5(String msg) {
@@ -71,6 +77,21 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
             stringBuffer.append(Integer.toHexString(0xff & newMsgBytes[i]));
         }
         return stringBuffer.toString();
+    }
+
+    @Override
+    public User newUser(User user, User newUser)
+            throws RemoteException, NoPrivilegesException, SQLException, UserNotFoundException, KeyNotReturnedException {
+        if (user == null || newUser == null) {
+            throw new InvalidParameterException();
+        }
+
+        if (user.isPrivilegios()) {
+            newUser.setPassword(toMD5(newUser.getPassword()));
+            return mConexaoBD.newUser(newUser);
+        } else {
+            throw new NoPrivilegesException();
+        }
     }
 
     @Override
@@ -87,6 +108,7 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
 
         String userPassword = toMD5(user.getPassword());
         if (userPassword.equals(tempUser.getPassword())) {
+            serverUI.sendMessage("O aprovador " + tempUser.getNome() + " fez login.");
             adminClients.add(adminClient);
             return tempUser;
         } else {
@@ -96,22 +118,8 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
 
     @Override
     public boolean logout(IClientAdmin adminClient) throws RemoteException {
+        serverUI.sendMessage("O aprovador " + adminClient.getUser().getNome() + " fez logout.");
         return adminClients.remove(adminClient);
-    }
-
-    @Override
-    public void newUser(User user, User newUser)
-            throws RemoteException, NoPrivilegesException, SQLException, UserNotFoundException, KeyNotReturnedException {
-        if (user == null || newUser == null) {
-            throw new InvalidParameterException();
-        }
-
-        if (user.isPrivilegios()) {
-            newUser.setPassword(toMD5(newUser.getPassword()));
-            mConexaoBD.newUser(newUser);
-        } else {
-            throw new NoPrivilegesException();
-        }
     }
 
     @Override
@@ -121,15 +129,16 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
             throw new InvalidParameterException();
         }
         mConexaoBD.newOfertaRecursos(ofertaRecursos);
+
         try {
             existemNovasOfertas();
-        } catch (OfertaEmpregoNotFoundException | NoPrivilegesException | OfertaRecursosNotFoundException | UserNotLoggedInException ex) {
-            serverUI.sendMessage("Tentativa de notificação dos clientes dos administradores falhada.");
+        } catch (OfertaEmpregoNotFoundException | NoPrivilegesException | OfertaRecursosNotFoundException | UserNotLoggedInException | IOException ex) {
+            serverUI.sendMessage("Foi adicionada um nova oferta de recursos mas a tentativa de notificar os clientes dos administradores falhou.");
         }
     }
 
     @Override
-    public void novaOferta(OfertaEmprego ofertaEmprego, ArrayList<FileTransfer> transferencias)
+    public void novaOferta(OfertaEmprego ofertaEmprego, List<FileTransfer> transferencias)
             throws RemoteException, SQLException, KeyNotReturnedException, FileNotFoundException, IOException {
         if (ofertaEmprego == null) {
             throw new InvalidParameterException();
@@ -152,24 +161,77 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
     }
 
     @Override
-    public Oferta getNewReviewCase() throws RemoteException, SQLException, OfertaEmpregoNotFoundException, OfertaRecursosNotFoundException {
-        if(random.nextBoolean()){
+    public synchronized Oferta getNewReviewCase() throws RemoteException, SQLException, OfertaEmpregoNotFoundException, OfertaRecursosNotFoundException {
+        Oferta tempOferta;
+        if (random.nextBoolean()) {
             try {
-                return mConexaoBD.getRecursoToReview();
+                tempOferta = mConexaoBD.getRecursoToReview(ofertasEmAnalise);
+                ofertasEmAnalise.add(tempOferta);
+                serverUI.sendMessage("A oferta de recursos de ID " + tempOferta.getId() + " foi enviada para análise.");
+                return tempOferta;
             } catch (OfertaRecursosNotFoundException ex) {
-                return mConexaoBD.getEmpregoToReview();
+                tempOferta = mConexaoBD.getEmpregoToReview(ofertasEmAnalise);
+                serverUI.sendMessage("A oferta de emprego de ID " + tempOferta.getId() + " foi enviada para análise.");
+                ofertasEmAnalise.add(tempOferta);
+                return tempOferta;
             }
         } else {
             try {
-                return mConexaoBD.getEmpregoToReview();
+                tempOferta = mConexaoBD.getEmpregoToReview(ofertasEmAnalise);
+                serverUI.sendMessage("A oferta de emprego de ID " + tempOferta.getId() + " foi enviada para análise.");
+                ofertasEmAnalise.add(tempOferta);
+                return tempOferta;
             } catch (OfertaEmpregoNotFoundException ex) {
-                return mConexaoBD.getRecursoToReview();
+                tempOferta = mConexaoBD.getRecursoToReview(ofertasEmAnalise);
+                serverUI.sendMessage("A oferta de recursos de ID " + tempOferta.getId() + " foi enviada para análise.");
+                ofertasEmAnalise.add(tempOferta);
+                return tempOferta;
             }
         }
     }
     
-    public void existemNovasOfertas() throws RemoteException, SQLException, OfertaEmpregoNotFoundException, NoPrivilegesException, OfertaRecursosNotFoundException, UserNotLoggedInException{
-        for (IClientAdmin ca : adminClients)
+    @Override
+    public List<FileTransfer> getAnexos(int id) throws RemoteException, SQLException, IOException{
+        List<FileTransfer> ficheiros = new ArrayList<>();
+        for(String path : mConexaoBD.getAnexos(id)){
+            ficheiros.add(new FileTransfer(new File(path)));
+        }
+        return ficheiros;
+    }
+
+    @Override
+    public synchronized void avaliarCaso(Oferta oferta, boolean avaliacao) 
+            throws RemoteException, SQLException {
+        if (oferta == null) {
+            throw new InvalidParameterException();
+        }
+
+        if (oferta instanceof OfertaEmprego) {
+            mConexaoBD.reviewEmprego(oferta.getId(), avaliacao);
+            ofertasEmAnalise.remove(oferta);
+            serverUI.sendMessage("A oferta de emprego de ID " + oferta.getId() + " recebeu avaliação " + (avaliacao?"positiva.":"negativa. As ofertas de emprego atribuídas serão reatribuídas."));
+        } else if (oferta instanceof OfertaRecursos) {
+            mConexaoBD.reviewRecurso(oferta.getId(), avaliacao);
+            ofertasEmAnalise.remove(oferta);
+            serverUI.sendMessage("A oferta de recursos de ID " + oferta.getId() + " recebeu avaliação " + (avaliacao?"positiva.":"negativa. As ofertas de emprego atribuídas serão reatribuídas."));
+        } else {
+            throw new InvalidParameterException();
+        }
+    }
+
+    @Override
+    public boolean cancelReview(Oferta oferta) throws RemoteException{
+        if(oferta != null){
+            serverUI.sendMessage("Foi cancelada a avaliação da oferta de " + (oferta instanceof OfertaEmprego?"emprego":"recursos") + " com ID " + oferta.getId());
+            return ofertasEmAnalise.remove(oferta);
+        } else return false;
+    }
+
+    public void existemNovasOfertas() throws RemoteException, SQLException,
+            OfertaEmpregoNotFoundException, NoPrivilegesException,
+            OfertaRecursosNotFoundException, UserNotLoggedInException, IOException {
+        for (IClientAdmin ca : adminClients) {
             ca.notificarNovosCasos();
+        }
     }
 }

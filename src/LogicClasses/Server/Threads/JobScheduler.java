@@ -7,8 +7,8 @@ package LogicClasses.Server.Threads;
 
 import DataClasses.Oferta;
 import DataClasses.OfertaRecursos;
-import LogicClasses.DBConnection.ConexaoBD;
-import static LogicClasses.DBConnection.ManagerConexaoBD.*;
+import LogicClasses.ConexoesBD.ConexaoBD;
+import static LogicClasses.ConexoesBD.ManagerConexaoBD.*;
 import LogicClasses.Server.IServerUI;
 import LogicClasses.Server.ServerImplementation;
 import java.sql.SQLException;
@@ -28,14 +28,21 @@ public class JobScheduler extends TimerTask {
 
     public JobScheduler(ServerImplementation server, IServerUI serverUI, ConexaoBD conexao,
             ConexaoBD conexaoThreadRedes, ConexaoBD conexaoThreadBasesDados,
-            ConexaoBD conexaoThreadDesenvolvimento)
+            ConexaoBD conexaoThreadDesenvolvimento, int tempoWaitVerificacoesLocais,
+            int tempoWaitVerificacoesBD)
             throws SQLException {
         this.conexao = conexao;
         this.serverUI = serverUI;
 
-        this.threadRedes = new ThreadGestaoArea(server, serverUI, Oferta.AREA_ATUACAO.REDE, conexaoThreadRedes);
-        this.threadBasesDados = new ThreadGestaoArea(server, serverUI, Oferta.AREA_ATUACAO.BASES_DADOS, conexaoThreadBasesDados);
-        this.threadDesenvolvimento = new ThreadGestaoArea(server, serverUI, Oferta.AREA_ATUACAO.DESENVOLVIMENTO, conexaoThreadDesenvolvimento);
+        this.threadRedes = new ThreadGestaoArea(server, serverUI, 
+                Oferta.AREA_ATUACAO.REDE, conexaoThreadRedes,
+                tempoWaitVerificacoesLocais,tempoWaitVerificacoesBD);
+        this.threadBasesDados = new ThreadGestaoArea(server, serverUI,
+                Oferta.AREA_ATUACAO.BASES_DADOS, conexaoThreadBasesDados,
+                tempoWaitVerificacoesLocais,tempoWaitVerificacoesBD);
+        this.threadDesenvolvimento = new ThreadGestaoArea(server, serverUI,
+                Oferta.AREA_ATUACAO.DESENVOLVIMENTO, conexaoThreadDesenvolvimento,
+                tempoWaitVerificacoesLocais,tempoWaitVerificacoesBD);
 
         this.threadRedes.start();
         this.threadBasesDados.start();
@@ -46,10 +53,11 @@ public class JobScheduler extends TimerTask {
     public void run() {
         try {
             List<OfertaRecursos> ofertasNovas = recursosFromResultSet(conexao.getStatement().executeQuery("select * from " + NOME_TABELA_OFERTAS_RECURSOS
-                    + " where " + RECURSOS_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.TERMINADO.toString() + "'"
+                    + " where " + RECURSOS_COLUNA_ESTADO_OFERTA + " = " + "'" + Oferta.ESTADO_OFERTA.APROVADO.name() + "'"
                     + " and " + RECURSOS_COLUNA_IS_NEW + " is true"));
 
-            serverUI.sendMessage("JobScheduler - " + ofertasNovas.size() + " novas ofertas de recursos Aprovadas foram enviadas para as threads.");
+            if(ofertasNovas.size() > 0)
+                serverUI.sendMessage("JobScheduler - " + ofertasNovas.size() + " novas ofertas de recursos Aprovadas foram enviadas para as threads.");
 
             for (OfertaRecursos oferta : ofertasNovas) {
                 if (oferta.getAreaAtuacao() == Oferta.AREA_ATUACAO.REDE) {
@@ -61,7 +69,7 @@ public class JobScheduler extends TimerTask {
                 }
 
                 conexao.getStatement().executeUpdate("update " + NOME_TABELA_OFERTAS_RECURSOS
-                        + " set " + RECURSOS_COLUNA_IS_NEW + " is false"
+                        + " set " + RECURSOS_COLUNA_IS_NEW + " = false"
                         + " where " + RECURSOS_COLUNA_ID + " = " + oferta.getId());
             }
         } catch (SQLException ex) {

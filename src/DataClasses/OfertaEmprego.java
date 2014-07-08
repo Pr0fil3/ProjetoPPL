@@ -8,7 +8,6 @@ import java.util.List;
  * Classe OfertaEmprego, extende Oferta
  */
 public class OfertaEmprego extends Oferta implements Serializable{
-    private int id;
     private String titulo;
     private String detalhesOferta;
     private int numeroCandidatosNecessarios;
@@ -17,8 +16,7 @@ public class OfertaEmprego extends Oferta implements Serializable{
 
     public OfertaEmprego(int id, String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
                          String perfilCandidatos, List<String> anexos, AREA_ATUACAO areaAtuacao, ESTADO_OFERTA estadoOferta) {
-        super(estadoOferta, areaAtuacao);
-        this.id = id;
+        super(id, estadoOferta, areaAtuacao);
         this.titulo = titulo;
         this.detalhesOferta = detalhesOferta;
         this.numeroCandidatosNecessarios = numeroCandidatosNecessarios;
@@ -44,10 +42,6 @@ public class OfertaEmprego extends Oferta implements Serializable{
     public OfertaEmprego(String titulo, String detalhesOferta, int numeroCandidatosNecessarios,
                          String perfilCandidatos, AREA_ATUACAO areaAtuacao) {
         this(0,titulo,detalhesOferta,numeroCandidatosNecessarios,perfilCandidatos, areaAtuacao,ESTADO_OFERTA.POR_APROVAR);
-    }
-
-    public int getId() {
-        return id;
     }
 
     public String getTitulo() {
@@ -90,7 +84,22 @@ public class OfertaEmprego extends Oferta implements Serializable{
         this.anexos = anexos;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    @Override
+    public boolean equals(Object o) {
+        if(o == null)
+            return false;
+        else if (o == this)
+            return true;
+        else if (o instanceof OfertaEmprego){
+            OfertaEmprego ofertaEmprego = (OfertaEmprego) o;
+            if(this.id == ofertaEmprego.id 
+                    && this.titulo.equals(ofertaEmprego.titulo) 
+                    && this.detalhesOferta.equals(ofertaEmprego.detalhesOferta)
+                    && this.numeroCandidatosNecessarios == ofertaEmprego.numeroCandidatosNecessarios
+                    && this.perfilCandidatos.equals(ofertaEmprego.perfilCandidatos))
+                if (anexos.size() == ofertaEmprego.anexos.size())
+                    return anexos.containsAll(ofertaEmprego.anexos);
+            return false;
+        } else return false;
     }
 }

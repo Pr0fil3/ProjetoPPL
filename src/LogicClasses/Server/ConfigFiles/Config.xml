@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configFile>
+    <database>
+        <url>jdbc:mysql://localhost:3306/projeto_ppl</url>
+        <user>root</user>
+        <password></password>
+    </database>
+    <accessIntervals>
+        <scheduler>10000</scheduler>
+        <ramData>1000</ramData>
+        <dbData>5000</dbData>
+    </accessIntervals>
+</configFile>
