@@ -15,7 +15,9 @@ import java.util.List;
 import javax.swing.JOptionPane;
 
 /**
- * Classe
+ * Classe para gerir vários objectos da classe "ConexaoBD"
+ * É esta classe que faz todas as operações na base de dados excepto as
+ * realizadas pelo JobScheduler e as Threads
  */
 public class ManagerConexaoBD {
     public static String NOME_TABELA_USERS = "Users";
@@ -48,16 +50,32 @@ public class ManagerConexaoBD {
 
     private final List<ConexaoBD> conexoes = new ArrayList<>();
 
+    /**
+     * Cria 5 conexoes utilizando as opções por defeito
+     * @throws SQLException 
+     */
     public ManagerConexaoBD() throws SQLException {
         for(int i = 0; i < 5; i++)
             conexoes.add(new ConexaoBD());
     }
 
+    /**
+     * Cria 5 conexoes utilizando os parametros de entrada
+     * @param url
+     * @param user
+     * @param password
+     * @throws SQLException 
+     */
     public ManagerConexaoBD(String url, String user, String password) throws SQLException {
         for(int i = 0; i < 5; i++)
             conexoes.add(new ConexaoBD(url, user, password));
     }
 
+    /**
+     * Procura uma conexao que não esteja a ser usada.
+     * @return uma ConexaoBD, conexao à base de dados
+     * @throws SQLException 
+     */
     private synchronized ConexaoBD getConexao() throws SQLException {
         while(true) {
             for (ConexaoBD conexao : conexoes) {
@@ -74,6 +92,15 @@ public class ManagerConexaoBD {
         }
     }
 
+    /**
+     * Retorna um ResultSet para querys simples
+     * @param statement para realizar uma Query
+     * @param tabela Nome da tabela a pesquisa
+     * @param condicao Condicao a procurar
+     * @param variavel Variavel a testar com a condicao
+     * @return ResultSet da Query
+     * @throws SQLException 
+     */
     private ResultSet getFromDB(Statement statement, String tabela, String condicao, String variavel) throws SQLException {
         return statement.executeQuery("select * from " + tabela + " where " + condicao + " = " + variavel);
     }
@@ -82,6 +109,12 @@ public class ManagerConexaoBD {
     // FROM RESULT SET //
     /////////////////////
 
+    /**
+     * 
+     * @param resultSet
+     * @return Lista de Users
+     * @throws SQLException 
+     */
     public static List<User> usersFromResultSet(ResultSet resultSet) throws SQLException {
         List users = new ArrayList<>();
         while (resultSet.next()) {
@@ -95,6 +128,12 @@ public class ManagerConexaoBD {
         return users;
     }
 
+    /**
+     * 
+     * @param resultSet
+     * @return Lista de Ofertas de Recursos
+     * @throws SQLException 
+     */
     public static List<OfertaRecursos> recursosFromResultSet(ResultSet resultSet) throws SQLException {
         List recursos = new ArrayList<>();
         while (resultSet.next()) {
@@ -110,6 +149,12 @@ public class ManagerConexaoBD {
         return recursos;
     }
 
+    /**
+     * 
+     * @param resultSet
+     * @return Lista de Ofertas de Emprego e seus Anexos
+     * @throws SQLException 
+     */
     public List<OfertaEmprego> empregoAndAnexosFromResultSet(ResultSet resultSet) throws SQLException {
         List emprego = new ArrayList<>();
         while (resultSet.next()){
@@ -129,6 +174,12 @@ public class ManagerConexaoBD {
         return emprego;
     }
     
+    /**
+     * 
+     * @param resultSet
+     * @return Lista de Ofertas de Emprego sem os anexos
+     * @throws SQLException 
+     */
     public static List<OfertaEmprego> empregoFromResultSet(ResultSet resultSet) throws SQLException {
         List emprego = new ArrayList<>();
         while (resultSet.next()){
@@ -146,6 +197,12 @@ public class ManagerConexaoBD {
         return emprego;
     }
 
+    /**
+     * 
+     * @param resultSet
+     * @return Lista de anexos
+     * @throws SQLException 
+     */
     private List<String> anexosFromResultSet(ResultSet resultSet) throws SQLException {
         List<String> anexos = new ArrayList<>();
         while (resultSet.next()){
@@ -158,6 +215,18 @@ public class ManagerConexaoBD {
     // NEW //
     /////////
 
+    /**
+     * Cria um novo utilizador na base de dados
+     * 
+     * Faz throw de "UserNotFoundException" ou "KeyNotReturnedException"
+     * se não conseguir retornar o utilizador criado, incluindo o seu id,
+     * criado pela base de dados em modo auto increment
+     * @param newUser
+     * @return O user criado
+     * @throws SQLException
+     * @throws UserNotFoundException
+     * @throws KeyNotReturnedException 
+     */
     public User newUser(User newUser) throws SQLException, UserNotFoundException, KeyNotReturnedException {
         ConexaoBD conexao = getConexao();
         try {
@@ -175,6 +244,11 @@ public class ManagerConexaoBD {
         }
     }
 
+    /**
+     * Cria uma nova oferta de Recrursos
+     * @param newOfertaRecursos
+     * @throws SQLException 
+     */
     public void newOfertaRecursos(OfertaRecursos newOfertaRecursos) 
             throws SQLException {
         ConexaoBD conexao = getConexao();
@@ -195,6 +269,15 @@ public class ManagerConexaoBD {
         }
     }
 
+    /**
+     * Cria uma nova oferta de emprego
+     * Retorna o ID da oferta criada para ser utilizado para inserir os anexos.
+     * 
+     * @param newOfertaEmprego
+     * @return O id da nova oferta
+     * @throws SQLException
+     * @throws KeyNotReturnedException 
+     */
     public int newOfertaEmprego(OfertaEmprego newOfertaEmprego) 
             throws SQLException, KeyNotReturnedException {
         ConexaoBD conexao = getConexao();
@@ -224,6 +307,12 @@ public class ManagerConexaoBD {
         }
     }
     
+    /**
+     * Insere os anexos da oferta com o ID "idEmprego"
+     * @param anexos
+     * @param idEmprego
+     * @throws SQLException 
+     */
     public void newAnexos(ArrayList<String> anexos, int idEmprego) 
             throws SQLException{
         ConexaoBD conexao = getConexao();
@@ -247,6 +336,13 @@ public class ManagerConexaoBD {
     // GET FROM BD //
     /////////////////
 
+    /**
+     * Procura na base de dados um utilizador com o id fornecido
+     * @param id
+     * @return O utlizador se o encontrar
+     * @throws SQLException
+     * @throws UserNotFoundException Se não encontrar utilizador
+     */
     public User getUser(int id) throws SQLException, UserNotFoundException {
         ConexaoBD conexao = getConexao();
         try {
@@ -258,6 +354,13 @@ public class ManagerConexaoBD {
         }
     }
 
+    /**
+     * Procura na base de dados uma oferta de recursos com o id fornecido
+     * @param id
+     * @return A oferta se a encontrar
+     * @throws SQLException
+     * @throws OfertaRecursosNotFoundException Se não encontrar Oferta
+     */
     public OfertaRecursos getOfertaRecursos(int id) throws SQLException, OfertaRecursosNotFoundException {
         ConexaoBD conexao = getConexao();
         try {
@@ -269,6 +372,13 @@ public class ManagerConexaoBD {
         }
     }
 
+    /**
+     * Procura na base de dados um oferta de emprego com o id fornecido
+     * @param id
+     * @return A oferta se a encontrar
+     * @throws SQLException
+     * @throws OfertaEmpregoNotFoundException Se não encontrar a oferta
+     */
     public OfertaEmprego getOfertaEmprego(int id) throws SQLException, OfertaEmpregoNotFoundException {
         ConexaoBD conexao = getConexao();
         try {
@@ -280,6 +390,12 @@ public class ManagerConexaoBD {
         }
     }
     
+    /**
+     * Procura na base de dados a lista de anexos da oferta com o id fornecido
+     * @param id
+     * @return A lista de anexos
+     * @throws SQLException 
+     */
     public List<String> getAnexos(int id) throws SQLException{
         ConexaoBD conexao = getConexao();
         List<String> anexos = new ArrayList<>();
@@ -294,6 +410,13 @@ public class ManagerConexaoBD {
     // GET REVIEW CASES //
     //////////////////////
     
+    /**
+     * Procura uma oferta de emprego que esteja pronta para ser aprovada
+     * @param ofertasEmAnalise
+     * @return OfertaEmprego
+     * @throws SQLException
+     * @throws OfertaEmpregoNotFoundException Se não encontrar nenhuma
+     */
     public OfertaEmprego getEmpregoToReview(ArrayList<Oferta> ofertasEmAnalise) throws SQLException, OfertaEmpregoNotFoundException{
         ConexaoBD conexao = getConexao();
         try{
@@ -309,6 +432,13 @@ public class ManagerConexaoBD {
         }
     }
     
+    /**
+     * Procura uma oferta de recursos que esteja pronta para ser aprovada
+     * @param ofertasEmAnalise
+     * @return OfertaRecursos
+     * @throws SQLException
+     * @throws OfertaRecursosNotFoundException Se não encontrar nenhuma
+     */
     public OfertaRecursos getRecursoToReview(ArrayList<Oferta> ofertasEmAnalise) throws SQLException, OfertaRecursosNotFoundException{
         ConexaoBD conexao = getConexao();
         try {
@@ -328,6 +458,12 @@ public class ManagerConexaoBD {
     // REVIEW CASE //
     /////////////////
     
+    /**
+     * Coloca na base de dados o resultado da análise de uma oferta de emprego 
+     * @param id
+     * @param analise
+     * @throws SQLException 
+     */
     public void reviewEmprego(int id, boolean analise) throws SQLException{
         ConexaoBD conexao = getConexao();
         try{
@@ -348,6 +484,12 @@ public class ManagerConexaoBD {
         }
     }
     
+    /**
+     * Coloca na base de dados o resultado da análise de uma oferta de recursos
+     * @param id
+     * @param analise
+     * @throws SQLException 
+     */
     public void reviewRecurso(int id, boolean analise) throws SQLException{
         ConexaoBD conexao = getConexao();
         try{

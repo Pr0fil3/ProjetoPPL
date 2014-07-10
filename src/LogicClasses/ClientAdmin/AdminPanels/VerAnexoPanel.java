@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package LogicClasses.ClientAdmin.AdminPanels;
 
 import DataClasses.FileTransfer;
@@ -13,8 +7,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Painel para ver e transferir Anexos
  */
 public class VerAnexoPanel extends javax.swing.JPanel {
     FileTransfer ficheiro;

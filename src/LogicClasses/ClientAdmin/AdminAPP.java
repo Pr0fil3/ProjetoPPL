@@ -33,8 +33,7 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Aplicação dos Aprovadores
  */
 public class AdminAPP extends javax.swing.JFrame {
 

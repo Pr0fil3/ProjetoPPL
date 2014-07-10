@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package LogicClasses.ClientRegister.ClientPanels;
 
 import java.io.File;
@@ -12,8 +6,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Painel que permite adicionar anexos a uma oferta de Emprego
  */
 public class AdicionarAnexoPanel extends javax.swing.JPanel {    
     /**

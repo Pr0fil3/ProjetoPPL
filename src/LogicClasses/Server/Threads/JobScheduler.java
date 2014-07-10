@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package LogicClasses.Server.Threads;
 
 import DataClasses.Oferta;
@@ -16,8 +11,9 @@ import java.util.List;
 import java.util.TimerTask;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Cria as 3 threads que analisam ofertas de cada área
+ * Verifica se há ofertas de recursos pronto para aprovação e envia-as para
+ * a respectiva thread.
  */
 public class JobScheduler extends TimerTask {
 
@@ -26,6 +22,20 @@ public class JobScheduler extends TimerTask {
 
     private final ThreadGestaoArea threadRedes, threadDesenvolvimento, threadBasesDados;
 
+    /**
+     * Atribui 4 conexoes recebidas, uma para si e uma para cada uma
+     * das 3 threads
+     * Recebe os tempos entre verificações à base de dados.
+     * @param server
+     * @param serverUI
+     * @param conexao
+     * @param conexaoThreadRedes
+     * @param conexaoThreadBasesDados
+     * @param conexaoThreadDesenvolvimento
+     * @param tempoWaitVerificacoesLocais
+     * @param tempoWaitVerificacoesBD
+     * @throws SQLException 
+     */
     public JobScheduler(ServerImplementation server, IServerUI serverUI, ConexaoBD conexao,
             ConexaoBD conexaoThreadRedes, ConexaoBD conexaoThreadBasesDados,
             ConexaoBD conexaoThreadDesenvolvimento, int tempoWaitVerificacoesLocais,

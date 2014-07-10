@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package LogicClasses.ClientAdmin.AdminPanels;
 
 import DataClasses.FileTransfer;
@@ -11,8 +6,8 @@ import java.util.List;
 import javax.swing.ScrollPaneConstants;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Painel para ver Ofertas de Emprego
+ * Usa o painel "VerAnexoPanel" para ver os anexos
  */
 public class VerOfertaEmpregoPanel extends javax.swing.JPanel {
 

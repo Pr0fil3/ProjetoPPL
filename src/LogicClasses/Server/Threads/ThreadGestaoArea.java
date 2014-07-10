@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package LogicClasses.Server.Threads;
 
 import DataClasses.Oferta;
@@ -23,8 +18,7 @@ import java.util.List;
 import java.util.Queue;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Threads que gerem cada área
  */
 public class ThreadGestaoArea extends Thread {
 
@@ -37,6 +31,16 @@ public class ThreadGestaoArea extends Thread {
 
     private final Queue<Integer> ofertasRecursosLivres;
 
+    /**
+     * Recebe uma referencia ao servidor para fazer um log das suas atividades.
+     * 
+     * @param server
+     * @param serverUI
+     * @param areaAtuacao
+     * @param conexao
+     * @param tempoWaitVerificacoesLocais
+     * @param tempoWaitVerificacoesBD 
+     */
     public ThreadGestaoArea(ServerImplementation server, IServerUI serverUI,
             Oferta.AREA_ATUACAO areaAtuacao, ConexaoBD conexao,
             int tempoWaitVerificacoesLocais, int tempoWaitVerificacoesBD) {
@@ -49,10 +53,19 @@ public class ThreadGestaoArea extends Thread {
         this.tempoWaitVerificacoesLocais = tempoWaitVerificacoesLocais;
     }
 
+    /**
+     * Recebe uma oferta de recursos para ser atribuida a uma oferta de emprego.
+     * Coloca-a numa lista de espera.
+     * @param id 
+     */
     public void adicionarOfertaRecursosLivre(int id) {
         ofertasRecursosLivres.add(id);
     }
 
+    /**
+     * Vai procurar na base de dados uma oferta de emprego sem atribuições.
+     * @return 
+     */
     private OfertaEmprego buscarOfertaEmpregoLivre() {
         try {
             List<OfertaEmprego> listaEmpregoLivre = empregoFromResultSet(conexao.getStatement().executeQuery("select * from " + NOME_TABELA_OFERTAS_EMPREGO

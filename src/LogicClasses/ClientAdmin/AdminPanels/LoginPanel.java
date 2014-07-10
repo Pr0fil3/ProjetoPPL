@@ -1,15 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package LogicClasses.ClientAdmin.AdminPanels;
 
 import DataClasses.User;
 
 /**
- *
+ * Painel utilizado para fazer login
+ * 
  * @author -nikeiZprooo-
  */
 public class LoginPanel extends javax.swing.JPanel {

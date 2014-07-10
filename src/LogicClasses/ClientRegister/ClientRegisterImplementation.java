@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by -nikeiZprooo- on 24/06/2014.
+ * Implementação do Cliente de Registos.
+ * É um intermediário entre o servidor e a aplicação em si.
  */
 public class ClientRegisterImplementation extends UnicastRemoteObject {
 

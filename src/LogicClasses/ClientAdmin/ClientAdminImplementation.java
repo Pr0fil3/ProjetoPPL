@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package LogicClasses.ClientAdmin;
 
 import DataClasses.FileTransfer;
@@ -27,8 +22,11 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Implementação do cliente dos aprovadores.
+ * É este que tem a referecia para o servidor é um objecto desta classe
+ * que é referenciado para o servidor enviar notificações quando existem novas
+ * ofertas para serem analisadas.
+ * É um intermediário entre a Aplicação em si e o servidor.
  */
 public class ClientAdminImplementation extends UnicastRemoteObject implements IClientAdmin {
 
@@ -47,6 +45,7 @@ public class ClientAdminImplementation extends UnicastRemoteObject implements IC
         return userLogado != null;
     }
 
+    
     public User login(int userID, String password) throws RemoteException,
             SQLException, WrongPasswordException, UserNotFoundException,
             PasswordNotValidException, UserNotValidException {
@@ -60,7 +59,7 @@ public class ClientAdminImplementation extends UnicastRemoteObject implements IC
         userLogado = server.login(this, new User(userID, password));
         return userLogado;
     }
-
+    
     public boolean logout() throws RemoteException {
         if (userLogado != null) {
             if (reviewAtual != null) {

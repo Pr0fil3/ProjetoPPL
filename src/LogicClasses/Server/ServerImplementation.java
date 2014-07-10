@@ -31,7 +31,9 @@ import java.util.Random;
 import java.util.Timer;
 
 /**
- * Created by -nikeiZprooo- on 30/05/2014.
+ * Implementação do servidor.
+ * Age como intermediário entre os clientes e o Manager da base de dados.
+ * Faz também a gestão do sistema de ficheiros no caso dos anexos.
  */
 public class ServerImplementation extends UnicastRemoteObject implements IServerForRegister, IServerForAdmin {
 
@@ -43,6 +45,15 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
     private final ArrayList<Oferta> ofertasEmAnalise = new ArrayList<>();
     private final Random random = new Random();
 
+    /**
+     * Inicializa o JobScheduler e as conexoes à base de dados.
+     * @param serverUI
+     * @param tempoWaitVerificacoesLocais
+     * @param tempoWaitVerificacoesBD
+     * @throws RemoteException
+     * @throws SQLException
+     * @throws NoSuchAlgorithmException 
+     */
     public ServerImplementation(IServerUI serverUI,
             int tempoWaitVerificacoesLocais, int tempoWaitVerificacoesBD)
             throws RemoteException, SQLException, NoSuchAlgorithmException {
@@ -55,6 +66,20 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
                 tempoWaitVerificacoesBD, tempoWaitVerificacoesBD);
     }
 
+    /**
+     * Inicializa o JobScheduler e as conexoes à base de dados com
+     * os parâmetros disponibilizados
+     * @param serverUI
+     * @param url
+     * @param user
+     * @param password
+     * @param tempoWaitScheduler
+     * @param tempoWaitVerificacoesLocais
+     * @param tempoWaitVerificacoesBD
+     * @throws RemoteException
+     * @throws SQLException
+     * @throws NoSuchAlgorithmException 
+     */
     public ServerImplementation(IServerUI serverUI, String url,
             String user, String password, int tempoWaitScheduler,
             int tempoWaitVerificacoesLocais, int tempoWaitVerificacoesBD)
@@ -68,6 +93,12 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
                 tempoWaitScheduler, tempoWaitScheduler);
     }
 
+    /**
+     * Encodifica mensagens.
+     * Utilizado para encodificar as passwords.
+     * @param msg
+     * @return String codificada
+     */
     private String toMD5(String msg) {
         byte[] msgBytes = msg.getBytes();
         messageDigest.reset();
@@ -79,6 +110,17 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
         return stringBuffer.toString();
     }
 
+    /**
+     * Cria um novo utilizador
+     * @param user
+     * @param newUser
+     * @return
+     * @throws RemoteException
+     * @throws NoPrivilegesException
+     * @throws SQLException
+     * @throws UserNotFoundException
+     * @throws KeyNotReturnedException 
+     */
     @Override
     public User newUser(User user, User newUser)
             throws RemoteException, NoPrivilegesException, SQLException, UserNotFoundException, KeyNotReturnedException {
@@ -94,6 +136,16 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
         }
     }
 
+    /**
+     * Faz login
+     * @param adminClient
+     * @param user
+     * @return
+     * @throws RemoteException
+     * @throws SQLException
+     * @throws WrongPasswordException
+     * @throws UserNotFoundException 
+     */
     @Override
     public User login(IClientAdmin adminClient, User user) throws RemoteException, SQLException, WrongPasswordException, UserNotFoundException {
         if (user == null) {
@@ -116,12 +168,24 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
         }
     }
 
+    /**
+     * Faz logout
+     * @param adminClient
+     * @return
+     * @throws RemoteException 
+     */
     @Override
     public boolean logout(IClientAdmin adminClient) throws RemoteException {
         serverUI.sendMessage("O aprovador " + adminClient.getUser().getNome() + " fez logout.");
         return adminClients.remove(adminClient);
     }
 
+    /**
+     * Permite criar uma nova oferta de recursos
+     * @param ofertaRecursos
+     * @throws RemoteException
+     * @throws SQLException 
+     */
     @Override
     public void novaOferta(OfertaRecursos ofertaRecursos)
             throws RemoteException, SQLException {
@@ -136,7 +200,17 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
             serverUI.sendMessage("Foi adicionada um nova oferta de recursos mas a tentativa de notificar os clientes dos administradores falhou.");
         }
     }
-
+    
+    /**
+     * Permite criar uma nova oferta de emprego e adiconar anexos.
+     * @param ofertaEmprego
+     * @param transferencias
+     * @throws RemoteException
+     * @throws SQLException
+     * @throws KeyNotReturnedException
+     * @throws FileNotFoundException
+     * @throws IOException 
+     */
     @Override
     public void novaOferta(OfertaEmprego ofertaEmprego, List<FileTransfer> transferencias)
             throws RemoteException, SQLException, KeyNotReturnedException, FileNotFoundException, IOException {
@@ -160,6 +234,18 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
         }
     }
 
+    /**
+     * Vai buscar aleatóriamente uma oferta para ser analisada.
+     * Dá throw de "OfertaEmpregoNotFoundException" ou
+     * "OfertaRecursosNotFoundException" se não existir nenhuma oferta
+     * para ser analisada.
+     * 
+     * @return
+     * @throws RemoteException
+     * @throws SQLException
+     * @throws OfertaEmpregoNotFoundException
+     * @throws OfertaRecursosNotFoundException 
+     */
     @Override
     public synchronized Oferta getNewReviewCase() throws RemoteException, SQLException, OfertaEmpregoNotFoundException, OfertaRecursosNotFoundException {
         Oferta tempOferta;
@@ -190,6 +276,15 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
         }
     }
     
+    /**
+     * Vai buscar à base de dados os anexos de uma certa oferta e envia-os
+     * através de objetos da classe FileTransfer
+     * @param id
+     * @return Lista de FileTransfer
+     * @throws RemoteException
+     * @throws SQLException
+     * @throws IOException 
+     */
     @Override
     public List<FileTransfer> getAnexos(int id) throws RemoteException, SQLException, IOException{
         List<FileTransfer> ficheiros = new ArrayList<>();
@@ -199,6 +294,13 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
         return ficheiros;
     }
 
+    /**
+     * Envia para a base de dados a avaliação de uma oferta
+     * @param oferta
+     * @param avaliacao
+     * @throws RemoteException
+     * @throws SQLException 
+     */
     @Override
     public synchronized void avaliarCaso(Oferta oferta, boolean avaliacao) 
             throws RemoteException, SQLException {
@@ -219,6 +321,12 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
         }
     }
 
+    /**
+     * Permite cancelar a análise de uma oferta
+     * @param oferta
+     * @return
+     * @throws RemoteException 
+     */
     @Override
     public boolean cancelReview(Oferta oferta) throws RemoteException{
         if(oferta != null){
@@ -227,6 +335,19 @@ public class ServerImplementation extends UnicastRemoteObject implements IServer
         } else return false;
     }
 
+    /**
+     * Chamado pelo JobScheduler e pelas Threads quando há novas Ofertas
+     * para serem analisadas.
+     * Notifica todos os clientes dos aprovadores que estiverem logados no
+     * servidor.
+     * @throws RemoteException
+     * @throws SQLException
+     * @throws OfertaEmpregoNotFoundException
+     * @throws NoPrivilegesException
+     * @throws OfertaRecursosNotFoundException
+     * @throws UserNotLoggedInException
+     * @throws IOException 
+     */
     public void existemNovasOfertas() throws RemoteException, SQLException,
             OfertaEmpregoNotFoundException, NoPrivilegesException,
             OfertaRecursosNotFoundException, UserNotLoggedInException, IOException {

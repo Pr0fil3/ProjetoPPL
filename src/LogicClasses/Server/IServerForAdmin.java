@@ -18,7 +18,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Created by -nikeiZprooo- on 30/05/2014.
+ * Interface utilizada pelo cliente dos aprovadores para se ligar ao servidor.
  */
 public interface IServerForAdmin extends Remote {
     public User login(IClientAdmin adminClient, User user) throws RemoteException, SQLException, WrongPasswordException, UserNotFoundException;

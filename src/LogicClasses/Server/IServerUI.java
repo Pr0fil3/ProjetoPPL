@@ -1,7 +1,7 @@
 package LogicClasses.Server;
 
 /**
- * Created by -nikeiZprooo- on 22/06/2014.
+ * Interface para a implementação enviar as mensagens do log para o ecrã.
  */
 public interface IServerUI {
     public void sendMessage(String msg);

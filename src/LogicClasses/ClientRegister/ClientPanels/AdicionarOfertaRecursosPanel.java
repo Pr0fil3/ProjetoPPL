@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package LogicClasses.ClientRegister.ClientPanels;
 
 import DataClasses.OfertaRecursos;
@@ -17,8 +11,7 @@ import java.sql.SQLException;
 import javax.swing.JOptionPane;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Painel que permite adicionar Ofertas de Recursos
  */
 public class AdicionarOfertaRecursosPanel extends javax.swing.JPanel {
     private ClientRegisterImplementation client;

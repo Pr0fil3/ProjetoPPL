@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package LogicClasses.ClientRegister.ClientPanels;
 
 import DataClasses.OfertaRecursos;
@@ -24,8 +18,8 @@ import javax.swing.JOptionPane;
 import javax.swing.ScrollPaneConstants;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Painel que permite adicionar Ofertas de Emprego
+ * Utiliza o "AdicionarAnexoPanel"
  */
 public class AdicionarOfertaEmpregoPanel extends javax.swing.JPanel {
     private final ClientAPP clientUI;

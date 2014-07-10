@@ -11,7 +11,7 @@ import java.rmi.RemoteException;
 import java.sql.SQLException;
 
 /**
- * Created by -nikeiZprooo- on 22/06/2014.
+ * Interface entre a Implementação do cliente e o servidor
  */
 public interface IClientAdmin extends Remote {
     public void notificarNovosCasos() throws RemoteException, SQLException,

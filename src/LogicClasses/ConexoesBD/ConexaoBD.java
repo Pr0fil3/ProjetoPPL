@@ -3,7 +3,7 @@ package LogicClasses.ConexoesBD;
 import java.sql.*;
 
 /**
- * A instaciação desta classe cria uma ligação à base de dados e repetiva statment
+ * A instaciação desta classe cria uma ligação à base de dados e respetiva statment
  */
 public class ConexaoBD {
     private static String DEFAULT_URL = "jdbc:mysql://localhost:3306/projeto_ppl";

@@ -13,7 +13,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Created by Leandro on 29/05/2014.
+ * Interface utilizada pelos clientes dos registers para se ligarem ao servidor.
  */
 public interface IServerForRegister extends Remote {
     public void novaOferta(OfertaRecursos ofertaRecursos) throws RemoteException, SQLException;

@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package LogicClasses.Server;
 
 import java.io.File;
@@ -23,15 +17,15 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 /**
- *
- * @author -nikeiZprooo-
+ * Aplicação do servidor.
+ * Inicializa a Implementação e mantém um log.
  */
 public class ServerAPP extends javax.swing.JFrame implements IServerUI{
     private ServerImplementation server;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm:ss - ");
     
     /**
-     * Creates new form ServerAPP
+     * Lê o ficheiro XML de configuração e inicializa o servidor.
      */
     public ServerAPP() {
         initComponents();
